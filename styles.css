@@ -3101,7 +3101,7 @@ body {
 }
 
 
-/* ================= 📐 ФИКС РАЗМЕРА АВАТАРКИ ================= */
+/* ================= РАЗМЕРА АВАТАРКИ ================= */
 
 .profile-avatar {
     flex: none !important;
@@ -3111,4 +3111,42 @@ body {
     max-height: 130px;
     overflow: hidden;
     position: relative;
+}
+
+.profile-avatar.frame-bronze,
+.profile-avatar.frame-silver,
+.profile-avatar.frame-gold,
+.profile-avatar.frame-diamond,
+.profile-avatar.frame-rainbow {
+    background: transparent !important;
+    border-radius: 50% !important;
+    overflow: visible !important;
+}
+
+.profile-avatar.frame-bronze img,
+.profile-avatar.frame-silver img,
+.profile-avatar.frame-gold img,
+.profile-avatar.frame-diamond img,
+.profile-avatar.frame-rainbow img {
+    width: 82px !important;
+    height: 82px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    display: block !important;
+    background: transparent !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+.profile-avatar.frame-bronze span,
+.profile-avatar.frame-silver span,
+.profile-avatar.frame-gold span,
+.profile-avatar.frame-diamond span,
+.profile-avatar.frame-rainbow span {
+    position: relative !important;
+    z-index: 5 !important;
+    color: #fff !important;
+    font-size: 44px !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .5) !important;
 }
