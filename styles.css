@@ -835,7 +835,7 @@ body {
 .profile-card {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 24px;
     background: #fff;
     border: 1px solid #eee;
     border-radius: 16px;
@@ -844,14 +844,15 @@ body {
 }
 
 .profile-avatar {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     background: linear-gradient(135deg, #df2026, #a81419);
     display: grid;
     place-items: center;
-    font-size: 40px;
+    font-size: 44px;
     flex: none;
+    color: #fff;
 }
 
 .profile-info {
@@ -1151,8 +1152,6 @@ body {
 .day-reward .star-icon {
     font-size: 14px;
 }
-
-/* ЦВЕТ ФОНА КЛЕТОК */
 
 .rewards-calendar tbody td.missed-cell {
     background: #fef2f2;
@@ -1747,7 +1746,6 @@ body {
     font-weight: 700;
 }
 
-/* Табы разделов магазина */
 .shop-tabs {
     display: flex;
     gap: 10px;
@@ -1778,7 +1776,6 @@ body {
     color: #fff;
 }
 
-/* Контент магазина */
 .shop-content {
     min-height: 300px;
 }
@@ -1812,7 +1809,6 @@ body {
     line-height: 1.6;
 }
 
-/* Адаптив */
 @media (max-width: 520px) {
     .shop-btn {
         font-size: 18px !important;
@@ -1865,7 +1861,6 @@ body {
     text-transform: uppercase;
 }
 
-/* Превью рамки */
 .shop-frame-preview {
     width: 70px;
     height: 70px;
@@ -1879,7 +1874,6 @@ body {
     position: relative;
 }
 
-/* Цвета рамок */
 .shop-frame-preview.bronze {
     border-color: #cd7f32;
 }
@@ -1898,8 +1892,6 @@ body {
     box-shadow: 0 0 12px rgba(0, 212, 255, .6);
 }
 
-
-
 .shop-frame-preview.rainbow {
     border: 4px solid transparent;
     background:
@@ -1907,8 +1899,6 @@ body {
         linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) border-box;
     animation: rainbowRotate 3s linear infinite;
 }
-
-
 
 @keyframes rainbowRotate {
     0% {
@@ -1966,7 +1956,6 @@ body {
     background: #f59e0b;
 }
 
-/* Рамка вокруг аватарки в профиле */
 .profile-avatar {
     border: 4px solid transparent;
     transition: border-color .3s, box-shadow .3s;
@@ -1990,7 +1979,6 @@ body {
     box-shadow: 0 0 20px rgba(0, 212, 255, .6);
 }
 
-
 .profile-avatar.frame-rainbow {
     border: 4px solid transparent;
     background:
@@ -1998,9 +1986,6 @@ body {
         linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) border-box;
 }
 
-
-
-/* Адаптив */
 @media (max-width: 850px) {
     .shop-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -2108,7 +2093,6 @@ body {
     color: #d97706;
 }
 
-/* ================= БЫСТРЫЕ КНОПКИ АДМИНА ================= */
 
 .admin-quick-btns {
     display: flex;
@@ -2326,7 +2310,6 @@ body {
     cursor: not-allowed;
 }
 
-/* 🔥 Кнопка «Начать готовить» в модалке */
 #startCookingBtn {
     background: linear-gradient(135deg, #df2026, #b8141a) !important;
     color: #fff !important;
@@ -2353,7 +2336,6 @@ body {
     transform: translateY(0) !important;
 }
 
-/* Экран победы */
 .cooking-win {
     text-align: center;
     padding: 60px 20px;
@@ -2604,7 +2586,6 @@ body {
     cursor: default;
 }
 
-/* Заявки и друзья */
 .friends-section {
     margin-bottom: 32px;
 }
@@ -2743,7 +2724,6 @@ body {
     font-size: 14px;
 }
 
-/* Модалка профиля друга */
 .friend-profile {
     text-align: center;
     padding: 10px 0;
@@ -2977,65 +2957,152 @@ body {
 
 /* ================= 🔥 АДМИНСКАЯ РАМКА ================= */
 
-/* Превью в магазине */
 .shop-frame-preview.admin {
-    border: 0;
-    background: url("images/admin-frame.png") center/cover no-repeat;
+    border: 0 !important;
+    background: url("images/admin-frame.png") center/contain no-repeat !important;
+    background-size: contain !important;
     position: relative;
-    box-shadow:
-        0 0 20px rgba(220, 32, 38, .8),
-        0 0 40px rgba(139, 0, 0, .6);
-    animation: adminPulse 2s ease-in-out infinite;
+    box-shadow: none !important;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Рамка вокруг аватарки в профиле */
 .profile-avatar.frame-admin {
-    border: 0;
+    border: 0 !important;
     position: relative;
-    background:
-        radial-gradient(circle at center, #df2026 0%, #a81419 100%) padding-box;
+    background: transparent !important;
+    width: 130px !important;
+    height: 130px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    isolation: isolate;
+    flex: none !important;
+    max-width: 130px !important;
+    min-width: 130px !important;
+}
+
+.profile-avatar.frame-admin img {
+    width: 95px !important;
+    height: 95px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+    background: transparent !important;
+    flex: none !important;
 }
 
 .profile-avatar.frame-admin::before {
     content: "";
     position: absolute;
-    inset: -12px;
-    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 130px;
+    height: 130px;
     background: url("images/admin-frame.png") center/contain no-repeat;
+    background-size: 100% 100%;
     pointer-events: none;
-    z-index: 1;
-    animation: adminSpin 30s linear infinite;
+    z-index: 3;
 }
 
-.profile-avatar.frame-admin {
+
+/* ================= 🧟 ЗОМБИ РАМКА ================= */
+
+.profile-avatar.frame-zombie {
+    border: 0 !important;
+    position: relative;
+    background: transparent !important;
+    width: 130px !important;
+    height: 130px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
     isolation: isolate;
-    z-index: 1;
+    flex: none !important;
+    max-width: 130px !important;
+    min-width: 130px !important;
 }
 
-/* Пульсация огня */
-@keyframes adminPulse {
-
-    0%,
-    100% {
-        box-shadow:
-            0 0 20px rgba(220, 32, 38, .8),
-            0 0 40px rgba(139, 0, 0, .6);
-    }
-
-    50% {
-        box-shadow:
-            0 0 30px rgba(220, 32, 38, 1),
-            0 0 60px rgba(139, 0, 0, .9);
-    }
+.profile-avatar.frame-zombie img {
+    width: 100px !important;
+    height: 100px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+    background: transparent !important;
+    flex: none !important;
 }
 
-/* Медленное вращение */
-@keyframes adminSpin {
-    from {
-        transform: rotate(0deg);
-    }
+.profile-avatar.frame-zombie::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 130px;
+    height: 130px;
+    background: url("images/zombie-frame.png") center/contain no-repeat;
+    background-size: 100% 100%;
+    pointer-events: none;
+    z-index: 3;
+}
 
-    to {
-        transform: rotate(360deg);
-    }
+.shop-frame-preview.zombie {
+    border: 0 !important;
+    background: url("images/zombie-frame.png") center/contain no-repeat !important;
+    background-size: contain !important;
+    position: relative;
+    box-shadow: none !important;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* ================= РАЗМЕР АВАТАРКИ ================= */
+
+.profile-avatar {
+    flex: none !important;
+    min-width: 90px;
+    min-height: 90px;
+    max-width: 130px;
+    max-height: 130px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* СБРОС РАМОК И АВАТАРОК */
+
+.profile-avatar:not(.frame-admin):not(.frame-zombie):not(.frame-bronze):not(.frame-silver):not(.frame-gold):not(.frame-diamond):not(.frame-rainbow) {
+    border: 4px solid transparent !important;
+    background: linear-gradient(135deg, #df2026, #a81419) !important;
+    color: #fff !important;
+    width: 90px !important;
+    height: 90px !important;
+    min-width: 90px !important;
+    min-height: 90px !important;
+    max-width: 90px !important;
+    max-height: 90px !important;
+    display: grid !important;
+    place-items: center !important;
+    font-size: 44px !important;
+    font-weight: 700 !important;
+}
+
+.profile-avatar:not(.frame-admin):not(.frame-zombie):not(.frame-bronze):not(.frame-silver):not(.frame-gold):not(.frame-diamond):not(.frame-rainbow)::before {
+    content: none !important;
 }
