@@ -31,7 +31,8 @@ const SUPER_USERS = [
 
 const SPECIAL_FRAME_EMAILS = [
     "ivan.dumenov@mail.ru",
-    "donaterkir@gmail.com"
+    "donaterkir@gmail.com",
+    "dumenovandrej7@gmail.com"
 ];
 
 function isSpecialFrameUser(email) {
