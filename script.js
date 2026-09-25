@@ -37,7 +37,8 @@ const ZOMBIE_ACCESS_EMAILS = [
 
 // 🔥 Кому доступна АДМИНСКАЯ рамка (только тебе!)
 const ADMIN_ACCESS_EMAILS = [
-    "ivan.dumenov@mail.ru"
+    "ivan.dumenov@mail.ru",
+    "dumenovandrej7@gmail.com"
 ];
 
 function isZombieUser(email) {
