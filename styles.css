@@ -853,6 +853,8 @@ body {
     font-size: 44px;
     flex: none;
     color: #fff;
+    border: 4px solid transparent;
+    transition: border-color .3s, box-shadow .3s;
 }
 
 .profile-info {
@@ -1956,11 +1958,6 @@ body {
     background: #f59e0b;
 }
 
-.profile-avatar {
-    border: 4px solid transparent;
-    transition: border-color .3s, box-shadow .3s;
-}
-
 .profile-avatar.frame-bronze {
     border-color: #cd7f32;
 }
@@ -2093,6 +2090,7 @@ body {
     color: #d97706;
 }
 
+/* ================= БЫСТРЫЕ КНОПКИ АДМИНА ================= */
 
 .admin-quick-btns {
     display: flex;
@@ -2985,6 +2983,21 @@ body {
     flex: none !important;
     max-width: 130px !important;
     min-width: 130px !important;
+    color: #fff !important;
+}
+
+.profile-avatar.frame-admin::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 95px;
+    height: 95px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #df2026 0%, #a81419 100%);
+    z-index: 1;
+    pointer-events: none;
 }
 
 .profile-avatar.frame-admin img {
@@ -2993,7 +3006,7 @@ body {
     border-radius: 50% !important;
     object-fit: cover !important;
     position: relative !important;
-    z-index: 1 !important;
+    z-index: 2 !important;
     display: block !important;
     background: transparent !important;
     flex: none !important;
@@ -3031,6 +3044,21 @@ body {
     flex: none !important;
     max-width: 130px !important;
     min-width: 130px !important;
+    color: #fff !important;
+}
+
+.profile-avatar.frame-zombie::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #df2026 0%, #a81419 100%);
+    z-index: 1;
+    pointer-events: none;
 }
 
 .profile-avatar.frame-zombie img {
@@ -3039,7 +3067,7 @@ body {
     border-radius: 50% !important;
     object-fit: cover !important;
     position: relative !important;
-    z-index: 1 !important;
+    z-index: 2 !important;
     display: block !important;
     background: transparent !important;
     flex: none !important;
@@ -3073,7 +3101,7 @@ body {
 }
 
 
-/* ================= РАЗМЕР АВАТАРКИ ================= */
+/* ================= 📐 ФИКС РАЗМЕРА АВАТАРКИ ================= */
 
 .profile-avatar {
     flex: none !important;
@@ -3083,26 +3111,4 @@ body {
     max-height: 130px;
     overflow: hidden;
     position: relative;
-}
-
-/* СБРОС РАМОК И АВАТАРОК */
-
-.profile-avatar:not(.frame-admin):not(.frame-zombie):not(.frame-bronze):not(.frame-silver):not(.frame-gold):not(.frame-diamond):not(.frame-rainbow) {
-    border: 4px solid transparent !important;
-    background: linear-gradient(135deg, #df2026, #a81419) !important;
-    color: #fff !important;
-    width: 90px !important;
-    height: 90px !important;
-    min-width: 90px !important;
-    min-height: 90px !important;
-    max-width: 90px !important;
-    max-height: 90px !important;
-    display: grid !important;
-    place-items: center !important;
-    font-size: 44px !important;
-    font-weight: 700 !important;
-}
-
-.profile-avatar:not(.frame-admin):not(.frame-zombie):not(.frame-bronze):not(.frame-silver):not(.frame-gold):not(.frame-diamond):not(.frame-rainbow)::before {
-    content: none !important;
 }
