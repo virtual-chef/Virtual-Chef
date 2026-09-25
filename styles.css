@@ -1,0 +1,3041 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #242424;
+    background: #fff;
+}
+
+.container {
+    width: min(100% - 80px, 1120px);
+    margin: auto;
+}
+
+
+/* HEADER */
+
+.topbar {
+    height: 70px;
+    background: #fffefe;
+    border-bottom: 1px solid #ecebeb;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.nav {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #222;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.brand b {
+    font-size: 18px;
+}
+
+.brand i {
+    color: #df2026;
+    font-style: normal;
+}
+
+.brand small {
+    display: block;
+    font-size: 8px;
+    color: #777;
+    margin-top: 2px;
+}
+
+.chef-logo {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    margin-top: -8px;
+}
+
+.chef-logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform .25s ease;
+    filter: brightness(0) saturate(100%) invert(22%) sepia(92%) saturate(3980%) hue-rotate(347deg) brightness(94%) contrast(96%);
+}
+
+.chef-logo:hover img {
+    transform: scale(1.08) rotate(-4deg);
+}
+
+.nav nav {
+    display: flex;
+    gap: 13px;
+    margin-left: 90px;
+}
+
+.nav-link,
+.nav-actions button {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: #333;
+}
+
+.nav-link {
+    padding: 12px 17px;
+    border-radius: 24px;
+    font-size: 13px;
+}
+
+.nav-link.active {
+    background: #dc1f25;
+    color: #fff;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nav-actions button {
+    font-size: 22px;
+}
+
+.stars-balance {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #fff5e6;
+    border: 1.5px solid #ffb84d;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #d97706;
+    cursor: default;
+    user-select: none;
+}
+
+.stars-balance .stars-icon {
+    font-size: 15px;
+}
+
+.stars-balance .stars-count {
+    min-width: 18px;
+    text-align: center;
+}
+
+.calendar-btn {
+    font-size: 22px !important;
+    padding: 4px 8px !important;
+    border-radius: 10px !important;
+    transition: .2s;
+}
+
+.calendar-btn:hover {
+    background: #fff5f5 !important;
+    transform: scale(1.12);
+}
+
+
+/* СТРАНИЦЫ */
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+
+/* HERO */
+
+.hero {
+    background-image: url("images/hero-home.png");
+    background-size: cover;
+    background-position: center 1px;
+    background-repeat: no-repeat;
+    height: 285px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-overlay {
+    position: relative;
+    height: 100%;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, .48) 0%,
+            rgba(0, 0, 0, .18) 57%,
+            rgba(0, 0, 0, 0) 100%);
+}
+
+.hero-content {
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.hero-copy {
+    color: #fff;
+    margin-top: 3px;
+}
+
+.hero h1 {
+    font-size: 44px;
+    line-height: 1;
+    margin: 0 0 9px;
+    font-weight: 800;
+}
+
+.hero h1 span {
+    color: #df2026;
+}
+
+.hero h2 {
+    font-size: 21px;
+    margin: 0 0 11px;
+}
+
+.hero p {
+    font-size: 12px;
+    line-height: 1.45;
+    margin: 0 0 16px;
+}
+
+
+/* SEARCH */
+
+.search {
+    height: 39px;
+    width: 385px;
+    background: #fff;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    padding-left: 13px;
+    overflow: hidden;
+}
+
+.search>span {
+    color: #555;
+    font-size: 18px;
+}
+
+.search input {
+    border: 0;
+    outline: 0;
+    flex: 1;
+    padding: 0 8px;
+    font-size: 11px;
+}
+
+.search button,
+.fridge-card button {
+    border: 0;
+    background: #df2026;
+    color: #fff;
+    border-radius: 20px;
+    height: 31px;
+    padding: 0 18px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+
+/* BENEFITS */
+
+.benefits {
+    height: 91px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+}
+
+.benefit-grid {
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    align-items: center;
+}
+
+.benefit-grid>div {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.round {
+    flex: none;
+    width: 47px;
+    height: 47px;
+    border-radius: 50%;
+    background: #df2026;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 29px;
+}
+
+.benefit-grid b {
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.benefit-grid small {
+    font-size: 10px;
+    color: #aaa;
+    line-height: 1.25;
+    display: block;
+}
+
+
+/* POPULAR */
+
+.popular {
+    padding: 20px 0 25px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 11px;
+}
+
+.section-title h2 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.text-btn {
+    border: 0;
+    background: none;
+    color: #df2026;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 290px;
+    gap: 22px;
+}
+
+
+/* RECIPE GRID */
+
+.recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+#recipeGrid .recipe img {
+    height: 90px;
+}
+
+.recipe {
+    border: 1px solid #eee;
+    border-radius: 7px;
+    overflow: hidden;
+    background: #fff;
+    cursor: pointer;
+    transition: .18s;
+    position: relative;
+}
+
+.recipe:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, .1);
+}
+
+.recipe img {
+    display: block;
+    width: 100%;
+    height: 107px;
+    object-fit: cover;
+    background: #f2f2f2;
+}
+
+.heart {
+    position: absolute;
+    right: 7px;
+    top: 6px;
+    color: #fff;
+    text-shadow: 0 1px 3px #333;
+    font-size: 18px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.recipe-body {
+    padding: 8px 9px 10px;
+}
+
+.meta {
+    font-size: 8px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.tag {
+    display: inline-block;
+    background: #e9f7d8;
+    color: #4e9b20;
+    border-radius: 8px;
+    padding: 2px 7px;
+    font-size: 7px;
+    margin-left: 3px;
+}
+
+.recipe:nth-child(2) .tag {
+    background: #fff0df;
+    color: #e28a2a;
+}
+
+.recipe h3 {
+    font-size: 11px;
+    margin: 0 0 6px;
+}
+
+.recipe p {
+    font-size: 8px;
+    color: #999;
+    margin: 0 0 8px;
+}
+
+.author {
+    font-size: 7px;
+    color: #aaa;
+}
+
+
+/* FRIDGE CARD */
+
+.fridge-card {
+    min-height: 190px;
+    border-radius: 10px;
+    background: #d91e24;
+    background-image: url("images/fridge-card.png");
+    background-size: cover;
+    color: #fff;
+    padding: 18px;
+    display: flex;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.fridge-card h3 {
+    font-size: 15px;
+    margin: 0 0 8px;
+}
+
+.fridge-card p {
+    font-size: 9px;
+    line-height: 1.4;
+    margin: 0 0 10px;
+}
+
+.fridge-card button {
+    background: #fff;
+    color: #df2026;
+}
+
+.fridge-icon {
+    font-size: 22px;
+    float: left;
+    margin-right: 8px;
+}
+
+.fridge-art {
+    font-size: 45px;
+    align-self: flex-end;
+    line-height: 1.05;
+}
+
+
+/* CATEGORIES */
+
+.taste {
+    height: 112px;
+    background: #fff3f3;
+    position: relative;
+    padding-top: 18px;
+}
+
+.chips {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    border: 0;
+    background: #fff;
+    border-radius: 14px;
+    padding: 7px 18px;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+.chip.active {
+    background: #df2026;
+    color: #fff;
+}
+
+.signature {
+    position: absolute;
+    right: 70px;
+    top: 25px;
+    color: #d64b50;
+    font-family: cursive;
+    font-size: 17px;
+    transform: rotate(-5deg);
+}
+
+
+/* PAGE HERO */
+
+.page-hero {
+    background: linear-gradient(135deg, #d91e24 0%, #a81419 100%);
+    color: #fff;
+    padding: 45px 0 38px;
+}
+
+.page-hero h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.page-hero p {
+    margin: 0;
+    font-size: 14px;
+    opacity: .92;
+}
+
+.page-body {
+    padding: 30px 0 50px;
+}
+
+
+/* ХОЛОДИЛЬНИК: HERO */
+
+.fridge-hero {
+    position: relative;
+    min-height: 300px;
+    background-image: url("images/fridge-hero.png");
+    background-size: cover;
+    background-position: center 40%;
+    background-repeat: no-repeat;
+    background-color: #0d1b2a;
+}
+
+.fridge-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            rgba(0, 0, 0, .78) 0%,
+            rgba(0, 0, 0, .55) 38%,
+            rgba(0, 0, 0, .10) 68%,
+            rgba(0, 0, 0, 0) 100%);
+    display: flex;
+    align-items: center;
+    padding-top: 40px;
+}
+
+.fridge-hero-content {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.fridge-hero-copy {
+    max-width: 520px;
+    color: #fff;
+}
+
+.fridge-hero h1 {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 48px;
+    line-height: 1.05;
+    margin: 0 0 16px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.fridge-hero h1 span {
+    color: #df2026;
+    font-style: italic;
+    font-weight: 800;
+}
+
+.fridge-hero p {
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0 0 22px;
+    opacity: .92;
+}
+
+.fridge-search {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 40px;
+    padding: 5px 5px 5px 20px;
+    max-width: 520px;
+    height: 54px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+}
+
+.fridge-search-icon {
+    color: #999;
+    font-size: 22px;
+    margin-right: 10px;
+}
+
+.fridge-search input {
+    flex: 1;
+    border: 0;
+    outline: none;
+    font-size: 14px;
+    background: transparent;
+    color: #333;
+}
+
+.fridge-search input::placeholder {
+    color: #aaa;
+}
+
+.fridge-search button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 0;
+    background: #df2026;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: .2s;
+}
+
+.fridge-search button:hover {
+    background: #b8141a;
+    transform: scale(1.05);
+}
+
+.fridge-handwrite {
+    font-family: "Caveat", "Comic Sans MS", cursive;
+    font-size: 20px;
+    color: #fff;
+    opacity: .85;
+    margin-top: 18px;
+    line-height: 1.2;
+    transform: rotate(-4deg);
+    display: inline-block;
+}
+
+
+/* ХОЛОДИЛЬНИК: РЕЗУЛЬТАТЫ */
+
+.fridge-results {
+    padding: 40px 0 60px;
+}
+
+.fridge-results-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.fridge-results-head h2 {
+    font-size: 22px;
+    line-height: 1.3;
+    margin: 0;
+    font-weight: 800;
+    color: #222;
+}
+
+
+/* MODAL */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    display: grid;
+    place-items: center;
+    z-index: 50;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-box {
+    width: min(500px, calc(100% - 32px));
+    background: #fff;
+    border-radius: 14px;
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, .25);
+}
+
+.close {
+    position: absolute;
+    right: 14px;
+    top: 10px;
+    border: 0;
+    background: none;
+    font-size: 26px;
+    cursor: pointer;
+}
+
+.modal-box h2 {
+    margin: 0 0 10px;
+    color: #df2026;
+}
+
+.modal-box p {
+    color: #666;
+    line-height: 1.5;
+}
+
+.modal-box ul {
+    color: #555;
+    line-height: 1.7;
+}
+
+.empty {
+    grid-column: 1 / -1;
+    padding: 35px;
+    text-align: center;
+    color: #999;
+    border: 1px dashed #ddd;
+    border-radius: 10px;
+}
+
+
+/* ПРОФИЛЬ */
+
+.profile-hero {
+    background: linear-gradient(135deg, #d91e24 0%, #a81419 100%);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.auth-block {
+    max-width: 420px;
+    margin: 20px auto;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .06);
+}
+
+.auth-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 22px;
+    background: #f4f4f4;
+    padding: 5px;
+    border-radius: 12px;
+}
+
+.auth-tab {
+    flex: 1;
+    border: 0;
+    background: none;
+    padding: 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    transition: .2s;
+}
+
+.auth-tab.active {
+    background: #fff;
+    color: #df2026;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-form input {
+    border: 1px solid #e3e3e3;
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 14px;
+    outline: none;
+    transition: .2s;
+}
+
+.auth-form input:focus {
+    border-color: #df2026;
+}
+
+.auth-form button {
+    border: 0;
+    background: #df2026;
+    color: #fff;
+    border-radius: 12px;
+    padding: 13px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.auth-form button:hover {
+    background: #b8141a;
+}
+
+.auth-error {
+    color: #df2026;
+    font-size: 12px;
+    margin: 0;
+    min-height: 16px;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #df2026, #a81419);
+    display: grid;
+    place-items: center;
+    font-size: 40px;
+    flex: none;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-info h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+}
+
+.profile-info .muted {
+    color: #999;
+    font-size: 13px;
+    margin: 2px 0;
+}
+
+.logout-btn {
+    border: 1px solid #df2026;
+    background: none;
+    color: #df2026;
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.logout-btn:hover {
+    background: #df2026;
+    color: #fff;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: #fff7f7;
+    border: 1px solid #f5dada;
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    transition: .2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(223, 32, 38, .12);
+}
+
+.stat-icon {
+    font-size: 26px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.stat-card b {
+    display: block;
+    font-size: 26px;
+    color: #df2026;
+    margin-bottom: 4px;
+}
+
+.stat-card small {
+    font-size: 11px;
+    color: #999;
+}
+
+.block-title {
+    font-size: 20px;
+    margin: 32px 0 16px;
+    font-weight: 800;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.achievement {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 18px 14px;
+    text-align: center;
+    position: relative;
+    transition: .25s;
+}
+
+.achievement.unlocked {
+    background: linear-gradient(135deg, #fff7f7, #ffe9e9);
+    border-color: #f5c5c5;
+}
+
+.achievement.unlocked:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(223, 32, 38, .15);
+}
+
+.achievement.locked {
+    opacity: .45;
+    filter: grayscale(1);
+}
+
+.achievement .ach-icon {
+    font-size: 34px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.achievement b {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #222;
+}
+
+.achievement small {
+    font-size: 10px;
+    color: #999;
+    line-height: 1.35;
+    display: block;
+}
+
+.achievement.unlocked::after {
+    content: "✓";
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    background: #df2026;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* ================= КАЛЕНДАРЬ НАГРАД ================= */
+
+.rewards-hero {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+}
+
+.rewards-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+}
+
+.rewards-stats>div {
+    background: #fff;
+    border: 2px solid #f0c896;
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    transition: .2s;
+}
+
+.rewards-stats>div:hover {
+    border-color: #e8b478;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, .1);
+}
+
+.rewards-stats b {
+    display: block;
+    font-size: 28px;
+    color: #ea580c;
+    margin-bottom: 4px;
+    font-weight: 800;
+}
+
+.rewards-stats small {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.rewards-month-title {
+    font-size: 22px;
+    font-weight: 800;
+    text-align: left;
+    margin-bottom: 16px;
+    color: #222;
+}
+
+.rewards-calendar-wrap {
+    background: #fff;
+    border: 2px solid #dcdcdc;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rewards-calendar {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+}
+
+.rewards-calendar thead th {
+    background: #f0f0f0;
+    color: #444;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 2px solid #d0d0d0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rewards-calendar tbody td {
+    border: 1px solid #e8e8e8;
+    padding: 14px 8px;
+    vertical-align: top;
+    height: 110px;
+    position: relative;
+    background: #fff;
+    transition: .15s;
+}
+
+.rewards-calendar tbody td.empty-cell {
+    background: #fafafa;
+    border: 1px solid #e8e8e8;
+}
+
+.day-num-cell {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.day-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding-top: 4px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1.5px solid;
+    background: #fff;
+    line-height: 1.4;
+}
+
+.status-badge.claimed {
+    color: #15803d;
+    border-color: #15803d;
+    background: #fff;
+}
+
+.status-badge.missed {
+    color: #b91c1c;
+    border-color: #b91c1c;
+    background: #fff;
+}
+
+.status-badge.available {
+    color: #999;
+    border-color: transparent;
+    background: transparent;
+    font-weight: 500;
+}
+
+.day-reward {
+    font-size: 13px;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.day-reward .star-icon {
+    font-size: 14px;
+}
+
+/* ЦВЕТ ФОНА КЛЕТОК */
+
+.rewards-calendar tbody td.missed-cell {
+    background: #fef2f2;
+}
+
+.rewards-calendar tbody td.missed-cell:hover {
+    background: #fee2e2;
+}
+
+.rewards-calendar tbody td.missed-cell .day-num-cell {
+    color: #b91c1c;
+}
+
+.rewards-calendar tbody td.claimed-cell {
+    background: #f0fdf4;
+}
+
+.rewards-calendar tbody td.claimed-cell:hover {
+    background: #dcfce7;
+}
+
+.rewards-calendar tbody td.claimed-cell .day-num-cell {
+    color: #15803d;
+}
+
+.rewards-calendar tbody td.today-cell.claimed-today {
+    background: #dcfce7;
+    cursor: default;
+}
+
+.rewards-calendar tbody td.today-cell.claimed-today:hover {
+    background: #dcfce7;
+}
+
+.rewards-calendar tbody td.today-cell.claimed-today .day-num-cell {
+    color: #15803d;
+    font-weight: 800;
+}
+
+.rewards-calendar tbody td.today-cell {
+    background: #eff6ff;
+    cursor: pointer;
+    transition: .15s;
+}
+
+.rewards-calendar tbody td.today-cell:hover {
+    background: #dbeafe;
+    box-shadow: inset 0 0 0 2px #3b82f6;
+}
+
+.rewards-calendar tbody td.today-cell .day-num-cell {
+    color: #1d4ed8;
+    font-weight: 800;
+}
+
+.rewards-calendar tbody td.today-cell .status-badge.available {
+    color: #1d4ed8;
+    border-color: #1d4ed8;
+    background: #fff;
+    font-weight: 700;
+}
+
+.rewards-calendar tbody td.future-cell {
+    background: #fafafa;
+}
+
+.rewards-calendar tbody td.future-cell .day-num-cell {
+    color: #bbb;
+}
+
+.rewards-calendar tbody td.future-cell .status-badge.available {
+    color: #bbb;
+}
+
+.rewards-hint {
+    max-width: 100%;
+    margin: 24px auto 0;
+    background: #fff7ed;
+    border: 2px solid #fed7aa;
+    border-radius: 8px;
+    padding: 14px 20px;
+    font-size: 13px;
+    color: #7c2d12;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.rewards-hint b {
+    color: #ea580c;
+    font-weight: 800;
+}
+
+
+/* ADAPTIVE */
+
+@media (max-width: 850px) {
+    .container {
+        width: min(100% - 28px, 700px);
+    }
+
+    .nav nav {
+        margin-left: 0;
+        gap: 4px;
+    }
+
+    .nav-link span {
+        display: none;
+    }
+
+    .benefit-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .benefits {
+        height: auto;
+        padding: 12px 0;
+    }
+
+    .hero h1 {
+        font-size: 34px;
+    }
+
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .recipe-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .fridge-card {
+        min-height: 160px;
+    }
+
+    .signature {
+        display: none;
+    }
+
+    .fridge-hero {
+        min-height: 360px;
+        background-position: center;
+    }
+
+    .fridge-hero h1 {
+        font-size: 36px;
+    }
+
+    .fridge-hero p {
+        font-size: 12px;
+    }
+
+    .fridge-handwrite {
+        display: none;
+    }
+
+    .fridge-results-head {
+        flex-direction: column;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .profile-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .rewards-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .rewards-calendar tbody td {
+        padding: 10px 4px;
+        height: 95px;
+    }
+
+    .status-badge {
+        padding: 2px 8px;
+        font-size: 10px;
+    }
+
+    .day-reward {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 520px) {
+    .brand b {
+        font-size: 13px;
+    }
+
+    .brand small {
+        display: none;
+    }
+
+    .nav-actions {
+        gap: 7px;
+    }
+
+    .stars-balance {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .calendar-btn {
+        font-size: 18px !important;
+    }
+
+    .hero {
+        height: 280px;
+    }
+
+    .hero-copy {
+        padding-top: 20px;
+    }
+
+    .hero h1 {
+        font-size: 29px;
+    }
+
+    .hero h2 {
+        font-size: 16px;
+    }
+
+    .hero p {
+        font-size: 10px;
+    }
+
+    .search {
+        width: 100%;
+    }
+
+    .benefit-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .round {
+        width: 35px;
+        height: 35px;
+        font-size: 17px;
+    }
+
+    .benefit-grid b {
+        font-size: 9px;
+    }
+
+    .benefit-grid small {
+        font-size: 7px;
+    }
+
+    .recipe-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .recipe img {
+        height: 75px;
+    }
+
+    .section-title h2 {
+        font-size: 15px;
+    }
+
+    .fridge-hero {
+        min-height: 300px;
+    }
+
+    .fridge-hero h1 {
+        font-size: 27px;
+    }
+
+    .fridge-search {
+        height: 46px;
+        padding-left: 14px;
+    }
+
+    .fridge-search button {
+        width: 38px;
+        height: 38px;
+        font-size: 17px;
+    }
+
+    .auth-block {
+        padding: 20px;
+    }
+
+    .achievements-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .achievement .ach-icon {
+        font-size: 26px;
+    }
+
+    .rewards-stats {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .rewards-stats b {
+        font-size: 24px;
+    }
+
+    .rewards-month-title {
+        font-size: 18px;
+    }
+
+    .rewards-calendar {
+        font-size: 11px;
+    }
+
+    .rewards-calendar thead th {
+        padding: 8px 2px;
+        font-size: 10px;
+    }
+
+    .rewards-calendar tbody td {
+        padding: 6px 2px;
+        height: 75px;
+    }
+
+    .day-num-cell {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .status-badge {
+        padding: 2px 6px;
+        font-size: 9px;
+        border-radius: 8px;
+    }
+
+    .day-reward {
+        font-size: 10px;
+    }
+
+    .day-reward .star-icon {
+        font-size: 10px;
+    }
+}
+
+/* ================= АДМИН-ПАНЕЛЬ В ПРОФИЛЕ ================= */
+
+.admin-panel {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 2px dashed #f59e0b;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.admin-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-panel-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #92400e;
+    font-weight: 800;
+}
+
+.admin-badge {
+    background: #f59e0b;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.admin-desc {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #a16207;
+}
+
+.admin-form {
+    display: grid;
+    grid-template-columns: 1fr 160px 160px;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.admin-form input {
+    border: 2px solid #fbbf24;
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    outline: none;
+    transition: .2s;
+}
+
+.admin-form input:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, .2);
+}
+
+.admin-form button {
+    background: #d97706;
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.admin-form button:hover {
+    background: #b45309;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(217, 119, 6, .3);
+}
+
+.admin-form button:active {
+    transform: translateY(0);
+}
+
+.admin-log {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.admin-log h4 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #92400e;
+    font-weight: 700;
+}
+
+#adminLogList {
+    font-size: 12px;
+    color: #78350f;
+    line-height: 1.8;
+}
+
+#adminLogList .log-entry {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px dashed #fcd34d;
+    flex-wrap: wrap;
+}
+
+#adminLogList .log-entry:last-child {
+    border-bottom: 0;
+}
+
+#adminLogList .log-email {
+    font-weight: 700;
+    color: #b45309;
+}
+
+#adminLogList .log-amount {
+    font-weight: 800;
+    color: #10b981;
+}
+
+#adminLogList .log-time {
+    color: #a16207;
+    font-size: 11px;
+}
+
+@media (max-width: 850px) {
+    .admin-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-form button {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 520px) {
+    .admin-form {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ================= СЕКЦИИ АДМИН-ПАНЕЛИ ================= */
+
+.admin-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed #fcd34d;
+}
+
+.admin-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.admin-section h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    color: #92400e;
+    font-weight: 800;
+}
+
+.admin-section-take h3 {
+    color: #b91c1c;
+}
+
+.admin-section-take .admin-desc {
+    color: #dc2626;
+}
+
+.admin-btn-take {
+    background: #dc2626 !important;
+}
+
+.admin-btn-take:hover {
+    background: #b91c1c !important;
+    box-shadow: 0 6px 14px rgba(220, 38, 38, .3) !important;
+}
+
+/* ================= МАГАЗИН ================= */
+
+.shop-btn {
+    font-size: 22px !important;
+    padding: 4px 8px !important;
+    border-radius: 10px !important;
+    transition: .2s;
+}
+
+.shop-btn:hover {
+    background: #fff5f5 !important;
+    transform: scale(1.12);
+}
+
+.shop-hero {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.shop-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+    max-width: 400px;
+}
+
+.shop-stats>div {
+    background: #fff;
+    border: 2px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    transition: .2s;
+}
+
+.shop-stats b {
+    display: block;
+    font-size: 32px;
+    color: #10b981;
+    margin-bottom: 4px;
+    font-weight: 800;
+}
+
+.shop-stats small {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+/* Табы разделов магазина */
+.shop-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.shop-tab {
+    border: 2px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    border-radius: 12px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.shop-tab:hover {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.shop-tab.active {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+
+/* Контент магазина */
+.shop-content {
+    min-height: 300px;
+}
+
+.shop-empty {
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 16px;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.shop-empty-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.shop-empty h2 {
+    font-size: 22px;
+    color: #374151;
+    margin: 0 0 8px;
+    font-weight: 800;
+}
+
+.shop-empty p {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Адаптив */
+@media (max-width: 520px) {
+    .shop-btn {
+        font-size: 18px !important;
+    }
+
+    .shop-tabs {
+        gap: 6px;
+    }
+
+    .shop-tab {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+}
+
+/* ================= ТОВАРЫ МАГАЗИНА ================= */
+
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.shop-card {
+    background: #fff;
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    transition: .2s;
+    position: relative;
+}
+
+.shop-card:hover {
+    border-color: #10b981;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, .15);
+}
+
+.shop-card-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #10b981;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 8px;
+    text-transform: uppercase;
+}
+
+/* Превью рамки */
+.shop-frame-preview {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #df2026, #a81419);
+    display: grid;
+    place-items: center;
+    font-size: 32px;
+    margin: 0 auto 12px;
+    border: 4px solid #ccc;
+    position: relative;
+}
+
+/* Цвета рамок */
+.shop-frame-preview.bronze {
+    border-color: #cd7f32;
+}
+
+.shop-frame-preview.silver {
+    border-color: #c0c0c0;
+}
+
+.shop-frame-preview.gold {
+    border-color: #ffd700;
+    box-shadow: 0 0 12px rgba(255, 215, 0, .5);
+}
+
+.shop-frame-preview.diamond {
+    border-color: #00d4ff;
+    box-shadow: 0 0 12px rgba(0, 212, 255, .6);
+}
+
+
+
+.shop-frame-preview.rainbow {
+    border: 4px solid transparent;
+    background:
+        linear-gradient(135deg, #df2026, #a81419) padding-box,
+        linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) border-box;
+    animation: rainbowRotate 3s linear infinite;
+}
+
+
+
+@keyframes rainbowRotate {
+    0% {
+        filter: hue-rotate(0deg);
+    }
+
+    100% {
+        filter: hue-rotate(360deg);
+    }
+}
+
+.shop-card h3 {
+    font-size: 16px;
+    margin: 0 0 4px;
+    color: #222;
+    font-weight: 800;
+}
+
+.shop-card .shop-price {
+    font-size: 18px;
+    color: #d97706;
+    font-weight: 800;
+    margin-bottom: 12px;
+}
+
+.shop-card button {
+    width: 100%;
+    border: 0;
+    background: #10b981;
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.shop-card button:hover {
+    background: #047857;
+    transform: translateY(-2px);
+}
+
+.shop-card button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.shop-card button.owned {
+    background: #6366f1;
+}
+
+.shop-card button.active-frame {
+    background: #f59e0b;
+}
+
+/* Рамка вокруг аватарки в профиле */
+.profile-avatar {
+    border: 4px solid transparent;
+    transition: border-color .3s, box-shadow .3s;
+}
+
+.profile-avatar.frame-bronze {
+    border-color: #cd7f32;
+}
+
+.profile-avatar.frame-silver {
+    border-color: #c0c0c0;
+}
+
+.profile-avatar.frame-gold {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, .5);
+}
+
+.profile-avatar.frame-diamond {
+    border-color: #00d4ff;
+    box-shadow: 0 0 20px rgba(0, 212, 255, .6);
+}
+
+
+.profile-avatar.frame-rainbow {
+    border: 4px solid transparent;
+    background:
+        linear-gradient(135deg, #df2026, #a81419) padding-box,
+        linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3) border-box;
+}
+
+
+
+/* Адаптив */
+@media (max-width: 850px) {
+    .shop-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .shop-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .shop-card {
+        padding: 14px;
+    }
+
+    .shop-frame-preview {
+        width: 55px;
+        height: 55px;
+        font-size: 24px;
+    }
+
+    .shop-card h3 {
+        font-size: 13px;
+    }
+
+    .shop-card .shop-price {
+        font-size: 15px;
+    }
+
+    .shop-card button {
+        font-size: 11px;
+        padding: 8px;
+    }
+}
+
+/* ================= ПРОГРЕСС В ДОСТИЖЕНИЯХ ================= */
+
+.achievement {
+    display: flex;
+    flex-direction: column;
+}
+
+.ach-progress {
+    margin-top: auto;
+    padding-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ach-bar {
+    flex: 1;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.ach-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .4s ease, background .3s;
+    background: #df2026;
+}
+
+.ach-fill.red {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.ach-fill.yellow {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.ach-fill.green {
+    background: linear-gradient(90deg, #4ade80, #16a34a);
+}
+
+.ach-fill.gold {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b, #fbbf24);
+    background-size: 200% 100%;
+    animation: goldShine 2s linear infinite;
+}
+
+@keyframes goldShine {
+    0% {
+        background-position: 0% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.ach-text {
+    font-size: 10px;
+    font-weight: 800;
+    color: #666;
+    min-width: 32px;
+    text-align: right;
+}
+
+.achievement.unlocked .ach-text {
+    color: #d97706;
+}
+
+/* ================= БЫСТРЫЕ КНОПКИ АДМИНА ================= */
+
+.admin-quick-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-quick-btns button {
+    background: #fbbf24 !important;
+    color: #78350f !important;
+    border: 0;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.admin-quick-btns button:hover {
+    background: #f59e0b !important;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 520px) {
+    .admin-quick-btns {
+        gap: 4px;
+    }
+
+    .admin-quick-btns button {
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+}
+
+/* ================= СТРАНИЦА ГОТОВКИ ================= */
+
+.cooking-header {
+    background: linear-gradient(135deg, #d91e24 0%, #a81419 100%);
+    color: #fff;
+    padding: 20px 0;
+    position: sticky;
+    top: 70px;
+    z-index: 15;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+}
+
+.cooking-header .container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.cooking-back {
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.cooking-back:hover {
+    background: rgba(255, 255, 255, .3);
+    transform: translateX(-3px);
+}
+
+.cooking-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.cooking-body {
+    padding: 40px 0 60px;
+    min-height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cooking-step-badge {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 800;
+    color: #df2026;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 24px;
+}
+
+.cooking-step-badge span {
+    color: #222;
+}
+
+.cooking-step-content {
+    background: #fff;
+    border: 3px solid #f5dada;
+    border-radius: 20px;
+    padding: 50px 30px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.5;
+    text-align: center;
+    color: #222;
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+    transition: .3s;
+    box-shadow: 0 8px 30px rgba(223, 32, 38, .08);
+}
+
+.cooking-step-content.animating {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.cooking-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.cooking-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    cursor: pointer;
+    transition: .2s;
+    border: 0;
+    padding: 0;
+}
+
+.cooking-dot:hover {
+    background: #f5dada;
+    transform: scale(1.3);
+}
+
+.cooking-dot.active {
+    background: #df2026;
+    transform: scale(1.3);
+}
+
+.cooking-dot.done {
+    background: #4ade80;
+}
+
+.cooking-dot.done.active {
+    background: #df2026;
+}
+
+.cooking-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cooking-btn {
+    flex: 1;
+    border: 0;
+    border-radius: 30px;
+    padding: 18px 24px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+    max-width: 260px;
+}
+
+.cooking-btn-prev {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.cooking-btn-prev:hover:not(:disabled) {
+    background: #e5e7eb;
+    transform: translateX(-3px);
+}
+
+.cooking-btn-next {
+    background: #df2026;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(223, 32, 38, .3);
+}
+
+.cooking-btn-next:hover {
+    background: #b8141a;
+    transform: translateX(3px);
+    box-shadow: 0 8px 24px rgba(223, 32, 38, .4);
+}
+
+.cooking-btn-finish {
+    background: linear-gradient(135deg, #10b981, #047857);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, .3);
+}
+
+.cooking-btn-finish:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, .5);
+}
+
+.cooking-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+/* 🔥 Кнопка «Начать готовить» в модалке */
+#startCookingBtn {
+    background: linear-gradient(135deg, #df2026, #b8141a) !important;
+    color: #fff !important;
+    border-radius: 30px !important;
+    padding: 18px 24px !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    box-shadow: 0 8px 24px rgba(223, 32, 38, .35) !important;
+    transition: .2s !important;
+    max-width: none !important;
+    width: 100% !important;
+    margin-top: 20px !important;
+    border: 0 !important;
+    cursor: pointer !important;
+}
+
+#startCookingBtn:hover {
+    background: linear-gradient(135deg, #b8141a, #9a0f14) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 30px rgba(223, 32, 38, .5) !important;
+}
+
+#startCookingBtn:active {
+    transform: translateY(0) !important;
+}
+
+/* Экран победы */
+.cooking-win {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.cooking-win-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: winPop .6s ease;
+}
+
+@keyframes winPop {
+    0% {
+        transform: scale(0);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.cooking-win h1 {
+    font-size: 32px;
+    margin: 0 0 12px;
+    color: #10b981;
+    font-weight: 800;
+}
+
+.cooking-win p {
+    font-size: 18px;
+    color: #666;
+    margin: 0 0 24px;
+}
+
+.cooking-win-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff5e6;
+    border: 2px solid #ffb84d;
+    border-radius: 20px;
+    padding: 14px 28px;
+    font-size: 24px;
+    font-weight: 800;
+    color: #d97706;
+    margin-bottom: 24px;
+}
+
+.cooking-win-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+    .cooking-header h2 {
+        font-size: 16px;
+    }
+
+    .cooking-back {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .cooking-step-content {
+        font-size: 20px;
+        padding: 35px 20px;
+        min-height: 140px;
+    }
+
+    .cooking-btn {
+        padding: 14px 16px;
+        font-size: 14px;
+    }
+}
+
+/* ================= ДРУЗЬЯ ================= */
+
+.friends-hero {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.nav-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+    animation: badgePulse 1.5s infinite;
+}
+
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+.friends-search {
+    background: #faf5ff;
+    border: 2px solid #e9d5ff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.friends-search h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    color: #6d28d9;
+    font-weight: 800;
+}
+
+.friends-desc {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #9333ea;
+}
+
+#friendsSearchForm {
+    display: flex;
+    gap: 10px;
+}
+
+#friendsSearchForm input {
+    flex: 1;
+    border: 2px solid #c4b5fd;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+    outline: none;
+    transition: .2s;
+    background: #fff;
+}
+
+#friendsSearchForm input:focus {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, .15);
+}
+
+#friendsSearchForm button {
+    border: 0;
+    background: #8b5cf6;
+    color: #fff;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+#friendsSearchForm button:hover {
+    background: #7c3aed;
+    transform: translateY(-2px);
+}
+
+#friendsSearchResult {
+    margin-top: 16px;
+}
+
+.friend-result-card {
+    background: #fff;
+    border: 2px solid #c4b5fd;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.friend-result-card .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #df2026, #a81419);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: 800;
+    flex: none;
+}
+
+.friend-result-card .info {
+    flex: 1;
+}
+
+.friend-result-card .info b {
+    display: block;
+    font-size: 15px;
+    color: #222;
+    margin-bottom: 2px;
+}
+
+.friend-result-card .info small {
+    font-size: 12px;
+    color: #999;
+}
+
+.friend-result-card button {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.friend-add-btn {
+    background: #8b5cf6;
+    color: #fff;
+}
+
+.friend-add-btn:hover {
+    background: #7c3aed;
+}
+
+.friend-add-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+.friend-pending-btn {
+    background: #fbbf24;
+    color: #78350f;
+    cursor: default;
+}
+
+.friend-already-btn {
+    background: #10b981;
+    color: #fff;
+    cursor: default;
+}
+
+/* Заявки и друзья */
+.friends-section {
+    margin-bottom: 32px;
+}
+
+.friends-section h2 {
+    font-size: 20px;
+    color: #222;
+    margin: 0 0 16px;
+    font-weight: 800;
+}
+
+.friends-section h2 span {
+    color: #8b5cf6;
+}
+
+.friend-row {
+    background: #fff;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+    transition: .2s;
+}
+
+.friend-row:hover {
+    border-color: #c4b5fd;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, .1);
+}
+
+.friend-row .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #df2026, #a81419);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: 800;
+    flex: none;
+}
+
+.friend-row .info {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-row .info b {
+    display: block;
+    font-size: 15px;
+    color: #222;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-row .info small {
+    font-size: 12px;
+    color: #999;
+}
+
+.friend-row .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.friend-row .actions button {
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.btn-accept {
+    background: #10b981;
+    color: #fff;
+}
+
+.btn-accept:hover {
+    background: #059669;
+}
+
+.btn-reject {
+    background: #f3f4f6;
+    color: #dc2626;
+}
+
+.btn-reject:hover {
+    background: #fee2e2;
+}
+
+.btn-profile {
+    background: #8b5cf6;
+    color: #fff;
+}
+
+.btn-profile:hover {
+    background: #7c3aed;
+}
+
+.btn-gift {
+    background: #fbbf24;
+    color: #78350f;
+}
+
+.btn-gift:hover {
+    background: #f59e0b;
+}
+
+.btn-remove {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.btn-remove:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.friends-empty {
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+/* Модалка профиля друга */
+.friend-profile {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.friend-profile .avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #df2026, #a81419);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 42px;
+    font-weight: 800;
+    margin: 0 auto 14px;
+}
+
+.friend-profile h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    color: #222;
+}
+
+.friend-profile .email {
+    color: #999;
+    font-size: 13px;
+    margin: 0 0 16px;
+}
+
+.friend-profile .stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.friend-profile .stats div {
+    text-align: center;
+}
+
+.friend-profile .stats b {
+    display: block;
+    font-size: 22px;
+    color: #df2026;
+    font-weight: 800;
+}
+
+.friend-profile .stats small {
+    font-size: 11px;
+    color: #999;
+    text-transform: uppercase;
+}
+
+.friend-profile .friends-title {
+    text-align: left;
+    margin: 20px 0 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #222;
+}
+
+.friend-profile .friend-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.friend-profile .friend-chip {
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #374151;
+    font-weight: 600;
+}
+
+.friend-profile .gift-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.friend-profile .gift-form input {
+    flex: 1;
+    border: 2px solid #fbbf24;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    outline: none;
+}
+
+.friend-profile .gift-form input:focus {
+    border-color: #d97706;
+}
+
+.friend-profile .gift-form button {
+    background: #fbbf24;
+    color: #78350f;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.friend-profile .gift-form button:hover {
+    background: #f59e0b;
+}
+
+@media (max-width: 520px) {
+    #friendsSearchForm {
+        flex-direction: column;
+    }
+
+    .friend-row {
+        flex-wrap: wrap;
+    }
+
+    .friend-row .actions {
+        width: 100%;
+    }
+
+    .friend-row .actions button {
+        flex: 1;
+    }
+
+    .friend-result-card {
+        flex-wrap: wrap;
+    }
+}
+
+/* ================= ПРОФИЛЬ ДРУГА ================= */
+
+.friend-hero {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.friend-back-btn {
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+    margin-bottom: 14px;
+    display: inline-block;
+}
+
+.friend-back-btn:hover {
+    background: rgba(255, 255, 255, .3);
+    transform: translateX(-3px);
+}
+
+.friend-gift-block {
+    margin-bottom: 24px;
+}
+
+.gift-form-friend {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+}
+
+.gift-form-friend input {
+    flex: 1;
+    border: 2px solid #fbbf24;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+    outline: none;
+    transition: .2s;
+    background: #fff;
+}
+
+.gift-form-friend input:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, .15);
+}
+
+.gift-form-friend button {
+    background: #fbbf24;
+    color: #78350f;
+    border: 0;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.gift-form-friend button:hover {
+    background: #f59e0b;
+    transform: translateY(-2px);
+}
+
+.friend-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.friend-chip {
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #374151;
+    font-weight: 600;
+    transition: .2s;
+}
+
+.friend-chip:hover {
+    background: #e5e7eb;
+}
+
+@media (max-width: 520px) {
+    .gift-form-friend {
+        flex-direction: column;
+    }
+}
+
+/* ================= 🔥 АДМИНСКАЯ РАМКА ================= */
+
+/* Превью в магазине */
+.shop-frame-preview.admin {
+    border: 0;
+    background: url("images/admin-frame.png") center/cover no-repeat;
+    position: relative;
+    box-shadow:
+        0 0 20px rgba(220, 32, 38, .8),
+        0 0 40px rgba(139, 0, 0, .6);
+    animation: adminPulse 2s ease-in-out infinite;
+}
+
+/* Рамка вокруг аватарки в профиле */
+.profile-avatar.frame-admin {
+    border: 0;
+    position: relative;
+    background:
+        radial-gradient(circle at center, #df2026 0%, #a81419 100%) padding-box;
+}
+
+.profile-avatar.frame-admin::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: url("images/admin-frame.png") center/contain no-repeat;
+    pointer-events: none;
+    z-index: 1;
+    animation: adminSpin 30s linear infinite;
+}
+
+.profile-avatar.frame-admin {
+    isolation: isolate;
+    z-index: 1;
+}
+
+/* Пульсация огня */
+@keyframes adminPulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 20px rgba(220, 32, 38, .8),
+            0 0 40px rgba(139, 0, 0, .6);
+    }
+
+    50% {
+        box-shadow:
+            0 0 30px rgba(220, 32, 38, 1),
+            0 0 60px rgba(139, 0, 0, .9);
+    }
+}
+
+/* Медленное вращение */
+@keyframes adminSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
