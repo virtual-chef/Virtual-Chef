@@ -31,8 +31,7 @@ const SUPER_USERS = [
 
 const SPECIAL_FRAME_EMAILS = [
     "ivan.dumenov@mail.ru",
-    "donaterkir@gmail.com",
-    "dumenovandrej7@gmail.com"
+    "donaterkir@gmail.com"
 ];
 
 function isSpecialFrameUser(email) {
@@ -547,10 +546,12 @@ function renderProfile() {
     const avatarEl = document.querySelector("#profileAvatar");
     avatarEl.setAttribute("data-letter", freshUser.name[0].toUpperCase());
 
+    avatarEl.innerHTML = "";
+
     if (userAvatars.active) {
         avatarEl.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="avatar">`;
     } else {
-        avatarEl.innerHTML = `<span style="position:relative;z-index:2;color:#fff;font-size:44px;font-weight:700;">${freshUser.name[0].toUpperCase()}</span>`;
+        avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${freshUser.name[0].toUpperCase()}</span>`;
     }
 
     if (typeof applyActiveFrame === "function") {
@@ -1365,10 +1366,12 @@ function applyActiveAvatar() {
     const letter = user ? user.name[0].toUpperCase() : "?";
     avatar.setAttribute("data-letter", letter);
 
+    avatar.innerHTML = "";
+
     if (userAvatars.active) {
         avatar.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="avatar">`;
     } else {
-        avatar.innerHTML = `<span style="position:relative;z-index:2;color:#fff;font-size:44px;font-weight:700;">${letter}</span>`;
+        avatar.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${letter}</span>`;
     }
 }
 
@@ -1523,6 +1526,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             await saveFramesToCloud();
             renderFramesGrid();
             applyActiveFrame();
+            applyActiveAvatar();
             showToast("✨ Рамка снята");
             return;
         }
@@ -1541,6 +1545,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             updateShopBalance();
             renderFramesGrid();
             applyActiveFrame();
+            applyActiveAvatar();
             showToast(`✅ Куплено: ${frame.name}!`);
             checkAchievements();
         } else if (action === "apply") {
@@ -1548,6 +1553,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             await saveFramesToCloud();
             renderFramesGrid();
             applyActiveFrame();
+            applyActiveAvatar();
             showToast(`✨ Применено: ${frame.name}`);
         }
         return;
@@ -1571,6 +1577,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             await saveAvatarsToCloud();
             renderAvatarsGrid();
             applyActiveAvatar();
+            applyActiveFrame();
             showToast("✨ Аватарка убрана");
             return;
         }
@@ -1589,12 +1596,14 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             updateShopBalance();
             renderAvatarsGrid();
             applyActiveAvatar();
+            applyActiveFrame();
             showToast(`✅ Куплено: ${avatar.name}!`);
         } else if (action === "apply") {
             userAvatars.active = avatarId;
             await saveAvatarsToCloud();
             renderAvatarsGrid();
             applyActiveAvatar();
+            applyActiveFrame();
             showToast(`✨ Применено: ${avatar.name}`);
         }
     }
@@ -2264,10 +2273,12 @@ async function openFriendPage(friend) {
     const friendLetter = (friend.name || "?")[0].toUpperCase();
     avatarEl.setAttribute("data-letter", friendLetter);
 
+    avatarEl.innerHTML = "";
+
     if (friend.activeAvatar) {
         avatarEl.innerHTML = `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`;
     } else {
-        avatarEl.innerHTML = `<span style="position:relative;z-index:2;color:#fff;font-size:44px;font-weight:700;">${friendLetter}</span>`;
+        avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
     }
     avatarEl.className = "profile-avatar";
     if (friend.activeFrame) {
