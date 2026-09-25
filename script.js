@@ -29,19 +29,35 @@ const SUPER_USERS = [
     ...FRIEND_EMAILS
 ];
 
-const SPECIAL_FRAME_EMAILS = [
+// 🧟 Кому доступна ЗОМБИ-рамка и ЗОМБИ-аватарка
+const ZOMBIE_ACCESS_EMAILS = [
     "ivan.dumenov@mail.ru",
     "donaterkir@gmail.com"
 ];
 
-function isSpecialFrameUser(email) {
+// 🔥 Кому доступна АДМИНСКАЯ рамка (только тебе!)
+const ADMIN_ACCESS_EMAILS = [
+    "ivan.dumenov@mail.ru"
+];
+
+function isZombieUser(email) {
     if (!email) return false;
-    return SPECIAL_FRAME_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
+    return ZOMBIE_ACCESS_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
 }
 
-const FRAME_OWNER_EMAILS = SPECIAL_FRAME_EMAILS;
+function isAdminFrameUser(email) {
+    if (!email) return false;
+    return ADMIN_ACCESS_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
+}
+
+// Старое для совместимости
+const SPECIAL_FRAME_EMAILS = ZOMBIE_ACCESS_EMAILS;
+const FRAME_OWNER_EMAILS = ZOMBIE_ACCESS_EMAILS;
+function isSpecialFrameUser(email) {
+    return isZombieUser(email);
+}
 function isFrameOwner(email) {
-    return isSpecialFrameUser(email);
+    return isZombieUser(email);
 }
 
 function isSuperUser(email) {
@@ -1247,19 +1263,19 @@ initGiftWatcher();
 /* ================= МАГАЗИН ================= */
 
 const SHOP_FRAMES = [
-    { id: "none", name: "❌ Снять рамку", price: 0, emoji: "🚫", adminOnly: false },
+    { id: "none", name: "❌ Снять рамку", price: 0, emoji: "🚫" },
     { id: "bronze", name: "🥉 Бронзовая", price: 100, emoji: "👨‍🍳" },
     { id: "silver", name: "🥈 Серебряная", price: 300, emoji: "👨‍🍳" },
     { id: "gold", name: "🥇 Золотая", price: 500, emoji: "👨‍🍳" },
     { id: "diamond", name: "💎 Алмазная", price: 1000, emoji: "👨‍🍳" },
     { id: "rainbow", name: "🌈 Радужная", price: 5000, emoji: "👨‍🍳" },
-    { id: "admin", name: "🔥 Адская", price: 0, emoji: "👑", adminOnly: true },
-    { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟", adminOnly: true }
+    { id: "admin", name: "🔥 Адская", price: 0, emoji: "👑" },
+    { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟" }
 ];
 
 const SHOP_AVATARS = [
-    { id: "none", name: "❌ Убрать аватарку", price: 0, emoji: "🚫", adminOnly: false },
-    { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟", adminOnly: true }
+    { id: "none", name: "❌ Убрать аватарку", price: 0, emoji: "🚫" },
+    { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟" }
 ];
 
 const SHOP_SECTIONS = {
@@ -1406,10 +1422,10 @@ function renderFramesGrid() {
     if (!grid) return;
     const stars = getStars();
     const user = currentUser();
-    const isSpecialUser = user && isSpecialFrameUser(user.email);
 
     const visibleFrames = SHOP_FRAMES.filter(frame => {
-        if (frame.adminOnly && !isSpecialUser) return false;
+        if (frame.id === "admin" && !isAdminFrameUser(user?.email)) return false;
+        if (frame.id === "zombie" && !isZombieUser(user?.email)) return false;
         return true;
     });
 
@@ -1459,10 +1475,9 @@ function renderAvatarsGrid() {
     if (!grid) return;
     const stars = getStars();
     const user = currentUser();
-    const isSpecialUser = user && isSpecialFrameUser(user.email);
 
     const visibleAvatars = SHOP_AVATARS.filter(avatar => {
-        if (avatar.adminOnly && !isSpecialUser) return false;
+        if (avatar.id === "zombie" && !isZombieUser(user?.email)) return false;
         return true;
     });
 
@@ -1516,7 +1531,11 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
         if (!frame) return;
 
         const user = currentUser();
-        if (frame.adminOnly && !isSpecialFrameUser(user?.email)) {
+        if (frameId === "admin" && !isAdminFrameUser(user?.email)) {
+            showToast("❌ Эта рамка только для админов");
+            return;
+        }
+        if (frameId === "zombie" && !isZombieUser(user?.email)) {
             showToast("❌ Эта рамка только для избранных");
             return;
         }
@@ -1567,7 +1586,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
         if (!avatar) return;
 
         const user = currentUser();
-        if (avatar.adminOnly && !isSpecialFrameUser(user?.email)) {
+        if (avatarId === "zombie" && !isZombieUser(user?.email)) {
             showToast("❌ Эта аватарка только для избранных");
             return;
         }
