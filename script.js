@@ -7,6 +7,11 @@ let userFrames = {
     active: null
 };
 
+let userAvatars = {
+    owned: [],
+    active: null
+};
+
 /* ================= ОСОБЫЕ ПОЛЬЗОВАТЕЛИ ================= */
 
 const ADMIN_EMAILS = [
@@ -24,15 +29,19 @@ const SUPER_USERS = [
     ...FRIEND_EMAILS
 ];
 
-// АДМИН РАМКА
-const FRAME_OWNER_EMAILS = [
+const SPECIAL_FRAME_EMAILS = [
     "ivan.dumenov@mail.ru",
-    "dumenovandrej7@gmail.com"
+    "donaterkir@gmail.com"
 ];
 
-function isFrameOwner(email) {
+function isSpecialFrameUser(email) {
     if (!email) return false;
-    return FRAME_OWNER_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
+    return SPECIAL_FRAME_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
+}
+
+const FRAME_OWNER_EMAILS = SPECIAL_FRAME_EMAILS;
+function isFrameOwner(email) {
+    return isSpecialFrameUser(email);
 }
 
 function isSuperUser(email) {
@@ -60,7 +69,7 @@ function isForbiddenName(name) {
     return forbiddenRoots.some(root => clean.includes(root));
 }
 
-/* ================= РЕЦЕПТЫ С ШАГАМИ ================= */
+/* ================= РЕЦЕПТЫ ================= */
 
 const recipes = [
     {
@@ -534,7 +543,14 @@ function renderProfile() {
     checkAchievements();
     const freshUser = currentUser();
 
-    document.querySelector("#profileAvatar").textContent = freshUser.name[0].toUpperCase();
+    const avatarEl = document.querySelector("#profileAvatar");
+    avatarEl.setAttribute("data-letter", freshUser.name[0].toUpperCase());
+
+    if (userAvatars.active) {
+        avatarEl.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="avatar">`;
+    } else {
+        avatarEl.innerHTML = `<span style="position:relative;z-index:2;color:#fff;font-size:44px;font-weight:700;">${freshUser.name[0].toUpperCase()}</span>`;
+    }
 
     if (typeof applyActiveFrame === "function") {
         applyActiveFrame();
@@ -1188,6 +1204,9 @@ async function initAuthListener() {
             if (typeof loadFramesFromCloud === "function") {
                 await loadFramesFromCloud();
             }
+            if (typeof loadAvatarsFromCloud === "function") {
+                await loadAvatarsFromCloud();
+            }
             await loadAchievementsFromCloud();
             const tempUser = currentUser();
             if (tempUser && isSuperUser(tempUser.email)) {
@@ -1226,12 +1245,19 @@ initGiftWatcher();
 /* ================= МАГАЗИН ================= */
 
 const SHOP_FRAMES = [
+    { id: "none", name: "❌ Снять рамку", price: 0, emoji: "🚫", adminOnly: false },
     { id: "bronze", name: "🥉 Бронзовая", price: 100, emoji: "👨‍🍳" },
     { id: "silver", name: "🥈 Серебряная", price: 300, emoji: "👨‍🍳" },
     { id: "gold", name: "🥇 Золотая", price: 500, emoji: "👨‍🍳" },
     { id: "diamond", name: "💎 Алмазная", price: 1000, emoji: "👨‍🍳" },
     { id: "rainbow", name: "🌈 Радужная", price: 5000, emoji: "👨‍🍳" },
-    { id: "admin", name: "🔥 Адская", price: 0, emoji: "👑", adminOnly: true }
+    { id: "admin", name: "🔥 Адская", price: 0, emoji: "👑", adminOnly: true },
+    { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟", adminOnly: true }
+];
+
+const SHOP_AVATARS = [
+    { id: "none", name: "❌ Убрать аватарку", price: 0, emoji: "🚫", adminOnly: false },
+    { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟", adminOnly: true }
 ];
 
 const SHOP_SECTIONS = {
@@ -1271,6 +1297,25 @@ async function loadFramesFromCloud() {
     }
 }
 
+async function loadAvatarsFromCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const ref = doc(db, "users", user.email);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+            const data = snap.data();
+            userAvatars.owned = data.ownedAvatars || [];
+            userAvatars.active = data.activeAvatar || null;
+            applyActiveAvatar();
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки аватарок:", e);
+    }
+}
+
 async function saveFramesToCloud() {
     if (!window.firebaseDB) return;
     const user = currentUser();
@@ -1287,12 +1332,42 @@ async function saveFramesToCloud() {
     }
 }
 
+async function saveAvatarsToCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        const ref = doc(db, "users", user.email);
+        await setDoc(ref, {
+            ownedAvatars: userAvatars.owned,
+            activeAvatar: userAvatars.active
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения аватарок:", e);
+    }
+}
+
 function applyActiveFrame() {
     const avatar = document.querySelector("#profileAvatar");
     if (!avatar) return;
     avatar.className = "profile-avatar";
     if (userFrames.active) {
         avatar.classList.add("frame-" + userFrames.active);
+    }
+}
+
+function applyActiveAvatar() {
+    const avatar = document.querySelector("#profileAvatar");
+    if (!avatar) return;
+    const user = currentUser();
+    const letter = user ? user.name[0].toUpperCase() : "?";
+    avatar.setAttribute("data-letter", letter);
+
+    if (userAvatars.active) {
+        avatar.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="avatar">`;
+    } else {
+        avatar.innerHTML = `<span style="position:relative;z-index:2;color:#fff;font-size:44px;font-weight:700;">${letter}</span>`;
     }
 }
 
@@ -1304,6 +1379,10 @@ function renderShopSection(sectionKey) {
         content.classList.add("hidden");
         grid.classList.remove("hidden");
         renderFramesGrid();
+    } else if (sectionKey === "avatars") {
+        content.classList.add("hidden");
+        grid.classList.remove("hidden");
+        renderAvatarsGrid();
     } else {
         content.classList.remove("hidden");
         grid.classList.add("hidden");
@@ -1323,22 +1402,27 @@ function renderFramesGrid() {
     if (!grid) return;
     const stars = getStars();
     const user = currentUser();
-    const isFrameOwnerUser = user && isFrameOwner(user.email);
+    const isSpecialUser = user && isSpecialFrameUser(user.email);
 
-    // АДМИН РАМКА ВИДНА ТОЛЬКО АДМИНАМ
     const visibleFrames = SHOP_FRAMES.filter(frame => {
-        if (frame.adminOnly && !isFrameOwnerUser) return false;
+        if (frame.adminOnly && !isSpecialUser) return false;
         return true;
     });
 
     grid.innerHTML = visibleFrames.map(frame => {
         const isOwned = userFrames.owned.includes(frame.id);
         const isActive = userFrames.active === frame.id;
+        const isNone = frame.id === "none";
         const canAfford = stars >= frame.price;
         let btnText = "Купить";
         let btnClass = "";
         let disabled = "";
-        if (isActive) {
+
+        if (isNone) {
+            btnText = isActive ? "✓ Активна" : "Снять";
+            btnClass = isActive ? "active-frame" : "";
+            disabled = isActive ? "disabled" : "";
+        } else if (isActive) {
             btnText = "✓ Активна";
             btnClass = "active-frame";
             disabled = "disabled";
@@ -1349,14 +1433,68 @@ function renderFramesGrid() {
             btnText = "Не хватает ⭐";
             disabled = "disabled";
         }
+
         return `
             <div class="shop-card">
-                <div class="shop-frame-preview ${frame.id}">${frame.emoji}</div>
+                <div class="shop-frame-preview ${isNone ? '' : frame.id}">${frame.emoji}</div>
                 <h3>${frame.name}</h3>
                 <div class="shop-price">${frame.price} ⭐</div>
                 <button
                     data-frame="${frame.id}"
-                    data-action="${isActive ? 'none' : isOwned ? 'apply' : 'buy'}"
+                    data-action="${isActive ? 'none' : (isOwned || isNone) ? 'apply' : 'buy'}"
+                    class="${btnClass}"
+                    ${disabled}
+                >${btnText}</button>
+            </div>
+        `;
+    }).join("");
+}
+
+function renderAvatarsGrid() {
+    const grid = document.querySelector("#shopGrid");
+    if (!grid) return;
+    const stars = getStars();
+    const user = currentUser();
+    const isSpecialUser = user && isSpecialFrameUser(user.email);
+
+    const visibleAvatars = SHOP_AVATARS.filter(avatar => {
+        if (avatar.adminOnly && !isSpecialUser) return false;
+        return true;
+    });
+
+    grid.innerHTML = visibleAvatars.map(avatar => {
+        const isOwned = userAvatars.owned.includes(avatar.id);
+        const isActive = userAvatars.active === avatar.id;
+        const isNone = avatar.id === "none";
+        const canAfford = stars >= avatar.price;
+        let btnText = "Купить";
+        let btnClass = "";
+        let disabled = "";
+
+        if (isNone) {
+            btnText = isActive ? "✓ Активна" : "Убрать";
+            btnClass = isActive ? "active-frame" : "";
+            disabled = isActive ? "disabled" : "";
+        } else if (isActive) {
+            btnText = "✓ Активна";
+            btnClass = "active-frame";
+            disabled = "disabled";
+        } else if (isOwned) {
+            btnText = "Применить";
+            btnClass = "owned";
+        } else if (!canAfford) {
+            btnText = "Не хватает ⭐";
+            disabled = "disabled";
+        }
+
+        return `
+            <div class="shop-card">
+                <div class="shop-frame-preview ${isNone ? '' : 'zombie'}">${avatar.emoji}</div>
+                <h3>${avatar.name}</h3>
+                <div class="shop-price">${avatar.price} ⭐</div>
+                <button
+                    data-avatar="${avatar.id}"
+                    data-action="${isActive ? 'none' : (isOwned || isNone) ? 'apply' : 'buy'}"
                     class="${btnClass}"
                     ${disabled}
                 >${btnText}</button>
@@ -1366,41 +1504,98 @@ function renderFramesGrid() {
 }
 
 document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
-    const btn = e.target.closest("button[data-frame]");
-    if (!btn || btn.disabled) return;
-    const frameId = btn.dataset.frame;
-    const action = btn.dataset.action;
-    const frame = SHOP_FRAMES.find(f => f.id === frameId);
-    if (!frame) return;
+    const frameBtn = e.target.closest("button[data-frame]");
+    if (frameBtn && !frameBtn.disabled) {
+        const frameId = frameBtn.dataset.frame;
+        const action = frameBtn.dataset.action;
+        const frame = SHOP_FRAMES.find(f => f.id === frameId);
+        if (!frame) return;
 
-    const user = currentUser();
-    if (frame.adminOnly && !isFrameOwner(user?.email)) {
-        showToast("❌ Эта рамка только для избранных");
+        const user = currentUser();
+        if (frame.adminOnly && !isSpecialFrameUser(user?.email)) {
+            showToast("❌ Эта рамка только для избранных");
+            return;
+        }
+
+        if (frameId === "none") {
+            userFrames.active = null;
+            await saveFramesToCloud();
+            renderFramesGrid();
+            applyActiveFrame();
+            showToast("✨ Рамка снята");
+            return;
+        }
+
+        if (action === "buy") {
+            const stars = getStars();
+            if (stars < frame.price) {
+                showToast("❌ Недостаточно звёзд");
+                return;
+            }
+            const newBalance = stars - frame.price;
+            await saveStarsToCloud(newBalance);
+            userFrames.owned.push(frameId);
+            userFrames.active = frameId;
+            await saveFramesToCloud();
+            updateShopBalance();
+            renderFramesGrid();
+            applyActiveFrame();
+            showToast(`✅ Куплено: ${frame.name}!`);
+            checkAchievements();
+        } else if (action === "apply") {
+            userFrames.active = frameId;
+            await saveFramesToCloud();
+            renderFramesGrid();
+            applyActiveFrame();
+            showToast(`✨ Применено: ${frame.name}`);
+        }
         return;
     }
 
-    if (action === "buy") {
-        const stars = getStars();
-        if (stars < frame.price) {
-            showToast("❌ Недостаточно звёзд");
+    const avatarBtn = e.target.closest("button[data-avatar]");
+    if (avatarBtn && !avatarBtn.disabled) {
+        const avatarId = avatarBtn.dataset.avatar;
+        const action = avatarBtn.dataset.action;
+        const avatar = SHOP_AVATARS.find(a => a.id === avatarId);
+        if (!avatar) return;
+
+        const user = currentUser();
+        if (avatar.adminOnly && !isSpecialFrameUser(user?.email)) {
+            showToast("❌ Эта аватарка только для избранных");
             return;
         }
-        const newBalance = stars - frame.price;
-        await saveStarsToCloud(newBalance);
-        userFrames.owned.push(frameId);
-        userFrames.active = frameId;
-        await saveFramesToCloud();
-        updateShopBalance();
-        renderFramesGrid();
-        applyActiveFrame();
-        showToast(`✅ Куплено: ${frame.name}!`);
-        checkAchievements();
-    } else if (action === "apply") {
-        userFrames.active = frameId;
-        await saveFramesToCloud();
-        renderFramesGrid();
-        applyActiveFrame();
-        showToast(`✨ Применено: ${frame.name}`);
+
+        if (avatarId === "none") {
+            userAvatars.active = null;
+            await saveAvatarsToCloud();
+            renderAvatarsGrid();
+            applyActiveAvatar();
+            showToast("✨ Аватарка убрана");
+            return;
+        }
+
+        if (action === "buy") {
+            const stars = getStars();
+            if (stars < avatar.price) {
+                showToast("❌ Недостаточно звёзд");
+                return;
+            }
+            const newBalance = stars - avatar.price;
+            await saveStarsToCloud(newBalance);
+            userAvatars.owned.push(avatarId);
+            userAvatars.active = avatarId;
+            await saveAvatarsToCloud();
+            updateShopBalance();
+            renderAvatarsGrid();
+            applyActiveAvatar();
+            showToast(`✅ Куплено: ${avatar.name}!`);
+        } else if (action === "apply") {
+            userAvatars.active = avatarId;
+            await saveAvatarsToCloud();
+            renderAvatarsGrid();
+            applyActiveAvatar();
+            showToast(`✨ Применено: ${avatar.name}`);
+        }
     }
 });
 
@@ -1413,7 +1608,9 @@ document.querySelector("#shopTabs")?.addEventListener("click", (e) => {
 });
 
 window.loadFramesFromCloud = loadFramesFromCloud;
+window.loadAvatarsFromCloud = loadAvatarsFromCloud;
 window.applyActiveFrame = applyActiveFrame;
+window.applyActiveAvatar = applyActiveAvatar;
 
 /* ================= РЕЖИМ ГОТОВКИ ================= */
 
@@ -2050,7 +2247,6 @@ let currentFriendEmail = null;
 async function openFriendPage(friend) {
     currentFriendEmail = friend.email;
 
-    // 👑 ОПРЕДЕЛИТЬ СТАТУС ДРУГА
     const isAdmin = isAdminUser(friend.email);
     const isFriend = isFriendUser(friend.email);
     const isSuper = isSuperUser(friend.email);
@@ -2064,7 +2260,14 @@ async function openFriendPage(friend) {
     document.querySelector("#friendName").textContent = displayName;
 
     const avatarEl = document.querySelector("#friendAvatar");
-    avatarEl.textContent = (friend.name || "?")[0].toUpperCase();
+    const friendLetter = (friend.name || "?")[0].toUpperCase();
+    avatarEl.setAttribute("data-letter", friendLetter);
+
+    if (friend.activeAvatar) {
+        avatarEl.innerHTML = `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`;
+    } else {
+        avatarEl.innerHTML = `<span style="position:relative;z-index:2;color:#fff;font-size:44px;font-weight:700;">${friendLetter}</span>`;
+    }
     avatarEl.className = "profile-avatar";
     if (friend.activeFrame) {
         avatarEl.classList.add("frame-" + friend.activeFrame);
