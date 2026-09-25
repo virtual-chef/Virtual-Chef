@@ -32,7 +32,9 @@ const SUPER_USERS = [
 // 🧟 Кому доступна ЗОМБИ-рамка и ЗОМБИ-аватарка
 const ZOMBIE_ACCESS_EMAILS = [
     "ivan.dumenov@mail.ru",
-    "donaterkir@gmail.com"
+    "donaterkir@gmail.com",
+    "dumenovandrej7@gmail.com"
+    
 ];
 
 // 🔥 Кому доступна АДМИНСКАЯ рамка (только тебе!)
