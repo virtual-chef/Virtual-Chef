@@ -273,6 +273,8 @@
                 </form>
 
                 <form id="registerForm" class="auth-form hidden">
+                    <input type="text" id="regNick" placeholder="Ник (по нему вас найдут)" required minlength="3"
+                        maxlength="20">
                     <input type="text" id="regName" placeholder="Ваше имя" required minlength="2">
                     <input type="email" id="regEmail" placeholder="Email" required>
                     <input type="password" id="regPassword" placeholder="Пароль (мин. 4 символа)" required
@@ -474,7 +476,7 @@
         <section class="page-hero friends-hero">
             <div class="container">
                 <h1>👥 Друзья</h1>
-                <p>Находите друзей, отправляйте заявки и дарите звёзды</p>
+                <p>Находите друзей по нику, отправляйте заявки и дарите звёзды</p>
             </div>
         </section>
 
@@ -483,9 +485,9 @@
             <!-- 🔍 Поиск -->
             <div class="friends-search">
                 <h2>🔍 Найти друга</h2>
-                <p class="friends-desc">Введи email друга, чтобы отправить заявку</p>
+                <p class="friends-desc">Введи ник друга, чтобы отправить заявку</p>
                 <form id="friendsSearchForm">
-                    <input type="email" id="friendsSearchInput" placeholder="Email друга">
+                    <input type="text" id="friendsSearchInput" placeholder="Ник друга (без @)">
                     <button type="submit">🔍 Найти</button>
                 </form>
                 <div id="friendsSearchResult"></div>
@@ -524,7 +526,7 @@
                 <div class="profile-avatar" id="friendAvatar">👨‍🍳</div>
                 <div class="profile-info">
                     <h2 id="friendName">—</h2>
-                    <p id="friendEmailDisplay" class="muted">—</p>
+                    <p id="friendNickDisplay" class="muted">—</p>
                     <p class="muted">С нами с <span id="friendDate">—</span></p>
                     <p class="muted">🤝 Друзей: <b id="friendFriendsCount">0</b></p>
                 </div>
