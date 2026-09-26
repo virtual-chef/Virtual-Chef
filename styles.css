@@ -475,9 +475,6 @@ body {
     line-height: 1.05;
 }
 
-
-/* CATEGORIES */
-
 .taste {
     height: 112px;
     background: #fff3f3;
@@ -514,9 +511,6 @@ body {
     font-size: 17px;
     transform: rotate(-5deg);
 }
-
-
-/* PAGE HERO */
 
 .page-hero {
     background: linear-gradient(135deg, #d91e24 0%, #a81419 100%);
@@ -681,9 +675,6 @@ body {
     font-weight: 800;
     color: #222;
 }
-
-
-/* MODAL */
 
 .modal {
     position: fixed;
@@ -1245,9 +1236,6 @@ body {
     color: #ea580c;
     font-weight: 800;
 }
-
-
-/* ADAPTIVE */
 
 @media (max-width: 850px) {
     .container {
