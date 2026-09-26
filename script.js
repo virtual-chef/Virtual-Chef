@@ -32,15 +32,12 @@ const SUPER_USERS = [
 // 🧟 Кому доступна ЗОМБИ-рамка и ЗОМБИ-аватарка
 const ZOMBIE_ACCESS_EMAILS = [
     "ivan.dumenov@mail.ru",
-    "donaterkir@gmail.com",
-    "dumenovandrej7@gmail.com"
-    
+    "donaterkir@gmail.com"
 ];
 
-// 🔥 Кому доступна АДМИНСКАЯ рамка (только тебе!)
+// 🔥 Кому доступна АДМИНСКАЯ рамка 
 const ADMIN_ACCESS_EMAILS = [
-    "ivan.dumenov@mail.ru",
-    "dumenovandrej7@gmail.com"
+    "ivan.dumenov@mail.ru"
 ];
 
 function isZombieUser(email) {
@@ -86,6 +83,17 @@ function isForbiddenName(name) {
         "admln", "adrnin", "αdmin", "👑"
     ];
     return forbiddenRoots.some(root => clean.includes(root));
+}
+
+function isForbiddenNick(nick) {
+    const clean = nick.toLowerCase().replace(/[^a-zа-яё0-9_]/gi, "");
+    if (clean.includes("admin") || clean.includes("админ")) return true;
+    return false;
+}
+
+function isValidNick(nick) {
+    if (!nick) return false;
+    return /^[a-zA-Zа-яА-ЯёЁ0-9_]{3,20}$/.test(nick);
 }
 
 /* ================= РЕЦЕПТЫ ================= */
@@ -298,6 +306,7 @@ function currentUser() {
     if (!email) return null;
     return {
         name: localStorage.getItem("vc_user_name") || "Пользователь",
+        nick: localStorage.getItem("vc_user_nick") || "",
         email: email,
         registered: parseInt(localStorage.getItem("vc_user_registered") || Date.now()),
         stats: JSON.parse(localStorage.getItem("vc_stats_" + email) || '{"opened":0,"fridgeSearches":0,"searches":0,"recipesPageVisits":0}'),
@@ -308,6 +317,7 @@ function currentUser() {
 function saveCurrentUser(user) {
     if (!user) return;
     localStorage.setItem("vc_user_name", user.name);
+    if (user.nick) localStorage.setItem("vc_user_nick", user.nick);
     localStorage.setItem("vc_user_email", user.email);
     localStorage.setItem("vc_stats_" + user.email, JSON.stringify(user.stats));
     localStorage.setItem("vc_achv_" + user.email, JSON.stringify(user.achievements));
@@ -587,7 +597,7 @@ function renderProfile() {
     else if (isSuper) displayName = "⭐ " + freshUser.name;
 
     document.querySelector("#profileName").textContent = displayName;
-    document.querySelector("#profileEmail").textContent = freshUser.email;
+    document.querySelector("#profileEmail").textContent = "@" + (freshUser.nick || "без_ника") + " · " + freshUser.email;
     document.querySelector("#profileDate").textContent =
         new Date(freshUser.registered).toLocaleDateString("ru-RU");
 
@@ -645,10 +655,24 @@ document.querySelectorAll(".auth-tab").forEach(tab => {
 
 registerForm?.addEventListener("submit", async e => {
     e.preventDefault();
+    const nick = document.querySelector("#regNick").value.trim();
     const name = document.querySelector("#regName").value.trim();
     const email = document.querySelector("#regEmail").value.trim().toLowerCase();
     const password = document.querySelector("#regPassword").value;
     const err = document.querySelector("#regError");
+
+    if (nick.length < 3 || nick.length > 20) {
+        err.textContent = "Ник должен быть от 3 до 20 символов";
+        return;
+    }
+    if (!isValidNick(nick)) {
+        err.textContent = "Ник может содержать только буквы, цифры и _";
+        return;
+    }
+    if (isForbiddenNick(nick)) {
+        err.textContent = "Этот ник запрещён. Придумайте другой.";
+        return;
+    }
     if (name.length < 2) {
         err.textContent = "Имя слишком короткое";
         return;
@@ -657,6 +681,19 @@ registerForm?.addEventListener("submit", async e => {
         err.textContent = "Это имя занято или запрещено. Придумайте другое.";
         return;
     }
+
+
+    try {
+        const nickRef = window.firebaseDB.doc(window.firebaseDB.db, "nicks", nick.toLowerCase());
+        const nickSnap = await window.firebaseDB.getDoc(nickRef);
+        if (nickSnap.exists()) {
+            err.textContent = "Этот ник уже занят. Придумайте другой.";
+            return;
+        }
+    } catch (e) {
+        console.error("Ошибка проверки ника:", e);
+    }
+
     try {
         err.textContent = "Создаём аккаунт...";
         const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(
@@ -664,6 +701,7 @@ registerForm?.addEventListener("submit", async e => {
         );
         await window.firebaseAuth.updateProfile(userCredential.user, { displayName: name });
         localStorage.setItem("vc_user_name", name);
+        localStorage.setItem("vc_user_nick", nick);
         localStorage.setItem("vc_user_email", email);
         localStorage.setItem("vc_user_registered", Date.now());
         localStorage.setItem("vc_stats_" + email, '{"opened":0,"fridgeSearches":0,"searches":0,"recipesPageVisits":0}');
@@ -672,9 +710,13 @@ registerForm?.addEventListener("submit", async e => {
             try {
                 const { db, doc, setDoc } = window.firebaseDB;
                 await setDoc(doc(db, "users", email), {
-                    email, name, stars: 0,
+                    email, name, nick, stars: 0,
                     registered: Date.now(), created: Date.now(),
                     achievements: ["first_step"]
+                });
+                await setDoc(doc(db, "nicks", nick.toLowerCase()), {
+                    email: email,
+                    nick: nick
                 });
             } catch (e) {
                 console.error("❌ Ошибка:", e);
@@ -846,6 +888,9 @@ async function loadStarsFromCloud() {
             localStorage.setItem("vc_stars", String(cloudStars));
             if (data.registered) {
                 localStorage.setItem("vc_user_registered", data.registered);
+            }
+            if (data.nick) {
+                localStorage.setItem("vc_user_nick", data.nick);
             }
         } else {
             const localStars = parseInt(localStorage.getItem("vc_stars") || "0");
@@ -1221,6 +1266,20 @@ async function initAuthListener() {
                 name = localStorage.getItem("vc_user_name") || "Пользователь";
             }
             localStorage.setItem("vc_user_name", name);
+
+            if (window.firebaseDB) {
+                try {
+                    const { db, doc, getDoc } = window.firebaseDB;
+                    const ref = doc(db, "users", user.email);
+                    const snap = await getDoc(ref);
+                    if (snap.exists() && snap.data().nick) {
+                        localStorage.setItem("vc_user_nick", snap.data().nick);
+                    }
+                } catch (e) {
+                    console.error("Ошибка загрузки ника:", e);
+                }
+            }
+
             await loadStarsFromCloud();
             if (typeof loadFramesFromCloud === "function") {
                 await loadFramesFromCloud();
@@ -1914,13 +1973,18 @@ async function showFriendsNotification() {
     }
 }
 
-async function searchUserByEmail(email) {
+async function searchUserByNick(nick) {
     if (!window.firebaseDB) return null;
     try {
         const { db, doc, getDoc } = window.firebaseDB;
-        const ref = doc(db, "users", email);
-        const snap = await getDoc(ref);
-        return snap.exists() ? { email: snap.id, ...snap.data() } : null;
+        const nickRef = doc(db, "nicks", nick.toLowerCase());
+        const nickSnap = await getDoc(nickRef);
+        if (!nickSnap.exists()) return null;
+
+        const email = nickSnap.data().email;
+        const userRef = doc(db, "users", email);
+        const userSnap = await getDoc(userRef);
+        return userSnap.exists() ? { email: userSnap.id, ...userSnap.data() } : null;
     } catch (e) {
         console.error("Ошибка поиска:", e);
         return null;
@@ -1967,7 +2031,7 @@ async function renderSearchResult(foundUser) {
             <div class="avatar">${(foundUser.name || "?")[0].toUpperCase()}</div>
             <div class="info">
                 <b>${foundUser.name || "Без имени"}</b>
-                <small>${foundUser.email}</small>
+                <small>@${foundUser.nick || "без_ника"}</small>
             </div>
             ${btnHTML}
         </div>
@@ -1983,6 +2047,7 @@ async function sendFriendRequest(toEmail) {
         await addDoc(collection(db, "friendRequests"), {
             from: me.email,
             fromName: me.name,
+            fromNick: me.nick || "",
             to: toEmail,
             status: "pending",
             date: Date.now()
@@ -2011,7 +2076,7 @@ async function renderRequests() {
             <div class="avatar">${(r.fromName || "?")[0].toUpperCase()}</div>
             <div class="info">
                 <b>${r.fromName || "Без имени"}</b>
-                <small>${r.from}</small>
+                <small>@${r.fromNick || "без_ника"}</small>
             </div>
             <div class="actions">
                 <button class="btn-accept" data-accept="${r.id}" data-from="${r.from}" data-fromname="${r.fromName || 'Друг'}">✅ Принять</button>
@@ -2102,7 +2167,7 @@ async function renderFriends() {
                 <div class="avatar">${(f.name || "?")[0].toUpperCase()}</div>
                 <div class="info">
                     <b>${f.name || "Без имени"}</b>
-                    <small>⭐ ${f.stars || 0} · 🏆 ${f.achievements?.length || 0} достижений</small>
+                    <small>@${f.nick || "без_ника"} · ⭐ ${f.stars || 0} · 🏆 ${f.achievements?.length || 0}</small>
                 </div>
                 <div class="actions">
                     <button class="btn-profile" data-view-friend="${friends[i]}">👤 Профиль</button>
@@ -2187,9 +2252,9 @@ async function giveStarsToFriend(email, amount) {
 function initFriendsPage() {
     document.querySelector("#friendsSearchForm")?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const email = document.querySelector("#friendsSearchInput").value.trim().toLowerCase();
-        if (!email) return;
-        const found = await searchUserByEmail(email);
+        const nick = document.querySelector("#friendsSearchInput").value.trim();
+        if (!nick) return;
+        const found = await searchUserByNick(nick);
         renderSearchResult(found);
     });
 
@@ -2307,7 +2372,7 @@ async function openFriendPage(friend) {
         avatarEl.classList.add("frame-" + friend.activeFrame);
     }
 
-    document.querySelector("#friendEmailDisplay").textContent = friend.email;
+    document.querySelector("#friendNickDisplay").textContent = "@" + (friend.nick || "без_ника");
 
     const registered = friend.registered || Date.now();
     const registeredDate = new Date(registered).toLocaleDateString("ru-RU");
