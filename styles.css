@@ -3197,3 +3197,64 @@ body {
     position: relative !important;
     z-index: 2 !important;
 }
+
+/* ================= ПОДПУНКТЫ В ГОТОВКЕ ================= */
+
+.cooking-step-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #df2026;
+    margin-bottom: 20px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.cooking-substeps {
+    text-align: left;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: #222;
+    padding-left: 24px;
+    margin: 0;
+    counter-reset: substep;
+}
+
+.cooking-substeps li {
+    margin-bottom: 12px;
+    padding-left: 8px;
+    position: relative;
+    list-style: none;
+}
+
+.cooking-substeps li::before {
+    counter-increment: substep;
+    content: counter(substep) ".";
+    position: absolute;
+    left: -24px;
+    font-weight: 800;
+    color: #df2026;
+}
+
+.cooking-step-content {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 40px 30px;
+}
+
+@media (max-width: 520px) {
+    .cooking-step-title {
+        font-size: 18px;
+        margin-bottom: 14px;
+    }
+
+    .cooking-substeps {
+        font-size: 15px;
+        padding-left: 20px;
+    }
+
+    .cooking-substeps li {
+        margin-bottom: 10px;
+    }
+}
