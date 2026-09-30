@@ -1,7 +1,5 @@
 console.log("✅ script.js загружен");
 
-/* ================= ПЕРЕМЕННЫЕ МАГАЗИНА ================= */
-
 let userFrames = {
     owned: [],
     active: null
@@ -17,6 +15,16 @@ let userAvatars = {
 const ADMIN_EMAILS = [
     "ivan.dumenov@mail.ru"
 ];
+
+/* ================= МАКС УРОВЕНЬ ================= */
+const PREMIUM_LEVEL_EMAILS = [
+    "ivan.dumenov@mail.ru"
+];
+
+function isPremiumLevelUser(email) {
+    if (!email) return false;
+    return PREMIUM_LEVEL_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
+}
 
 const FRIEND_EMAILS = [
     "dumenovandrej7@gmail.com",
@@ -3531,6 +3539,11 @@ function unlockAchievement(user, id) {
         const ach = ACHIEVEMENTS.find(a => a.id === id);
         if (ach) showToast(`🏆 Достижение: ${ach.name}`);
         saveAchievementsToCloud(user.achievements);
+        if (!isSuperUser(user.email)) {
+            setTimeout(() => {
+                addExp(5, "за достижение");
+            }, 500);
+        }
     }
 }
 
@@ -3680,8 +3693,9 @@ function renderProfile() {
     const freshUser = currentUser();
 
     const avatarEl = document.querySelector("#profileAvatar");
-    avatarEl.setAttribute("data-letter", freshUser.name[0].toUpperCase());
+    if (!avatarEl) return;
 
+    avatarEl.setAttribute("data-letter", freshUser.name[0].toUpperCase());
     avatarEl.innerHTML = "";
 
     if (userAvatars.active) {
@@ -3703,48 +3717,74 @@ function renderProfile() {
     else if (isFriend) displayName = "🤝 " + freshUser.name;
     else if (isSuper) displayName = "⭐ " + freshUser.name;
 
-    document.querySelector("#profileName").textContent = displayName;
-    document.querySelector("#profileEmail").textContent = "@" + (freshUser.nick || "без_ника") + " · " + freshUser.email;
-    document.querySelector("#profileDate").textContent =
-        new Date(freshUser.registered).toLocaleDateString("ru-RU");
+    const nameEl = document.querySelector("#profileName");
+    if (nameEl) nameEl.textContent = displayName;
 
-    document.querySelector("#statOpened").textContent = freshUser.stats.opened;
-    document.querySelector("#statFavs").textContent = favorites.length;
+    const realNameEl = document.querySelector("#profileRealName");
+    if (realNameEl) {
+        const nick = freshUser.nick || "без_ника";
+        const emailShort = freshUser.email;
+        realNameEl.textContent = "@" + nick + " · " + emailShort;
+    }
 
-    let achvText = `${freshUser.achievements.length}/${ACHIEVEMENTS.length}`;
-    if (isSuper) achvText += " ⭐";
-    document.querySelector("#statAchv").textContent = achvText;
+    const dateEl = document.querySelector("#profileDate");
+    if (dateEl) {
+        const regDate = new Date(freshUser.registered || Date.now());
+        dateEl.textContent = regDate.toLocaleDateString("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        });
+    }
 
-    document.querySelector("#statDays").textContent = daysOnSite(freshUser);
+    const statOpenedEl = document.querySelector("#statOpened");
+    if (statOpenedEl) statOpenedEl.textContent = freshUser.stats.opened;
+
+    const statFavsEl = document.querySelector("#statFavs");
+    if (statFavsEl) statFavsEl.textContent = favorites.length;
+
+    const aсhvCountEl = document.querySelector("#vkAchvCount");
+    if (aсhvCountEl) {
+        let achvText = `${freshUser.achievements.length}/${ACHIEVEMENTS.length}`;
+        if (isSuper) achvText += " ⭐";
+        aсhvCountEl.textContent = achvText;
+    }
 
     const grid = document.querySelector("#achievementsGrid");
-    grid.innerHTML = ACHIEVEMENTS.map(a => {
-        const unlocked = freshUser.achievements.includes(a.id);
-        const prog = getAchievementProgress(a.id);
-        const percent = Math.min(100, Math.round((prog.current / prog.target) * 100));
-        const color = getProgressColor(percent);
+    if (grid) {
+        grid.innerHTML = ACHIEVEMENTS.map(a => {
+            const unlocked = freshUser.achievements.includes(a.id);
+            const prog = getAchievementProgress(a.id);
+            const percent = Math.min(100, Math.round((prog.current / prog.target) * 100));
+            const color = getProgressColor(percent);
 
-        return `
-            <div class="achievement ${unlocked ? "unlocked" : "locked"}">
-                <span class="ach-icon">${a.icon}</span>
-                <b>${a.name}</b>
-                <small>${a.desc}</small>
-                <div class="ach-progress">
-                    <div class="ach-bar">
-                        <div class="ach-fill ${color}" style="width: ${percent}%"></div>
+            return `
+                <div class="achievement ${unlocked ? "unlocked" : "locked"}">
+                    <span class="ach-icon">${a.icon}</span>
+                    <b>${a.name}</b>
+                    <small>${a.desc}</small>
+                    <div class="ach-progress">
+                        <div class="ach-bar">
+                            <div class="ach-fill ${color}" style="width: ${percent}%"></div>
+                        </div>
+                        <span class="ach-text">${prog.current}/${prog.target}</span>
                     </div>
-                    <span class="ach-text">${prog.current}/${prog.target}</span>
-                </div>
-            </div>`;
-    }).join("");
+                </div>`;
+        }).join("");
+    }
 
     const favContainer = document.querySelector("#profileFavorites");
-    const favRecipes = recipes.filter(r => favorites.includes(r.id));
-    if (!favRecipes.length) {
-        favContainer.innerHTML = `<div class="empty">Пока нет избранных рецептов. Добавляйте ♡ на карточках.</div>`;
-    } else {
-        renderTo(favContainer, favRecipes);
+    if (favContainer) {
+        const favRecipes = recipes.filter(r => favorites.includes(r.id));
+        if (!favRecipes.length) {
+            favContainer.innerHTML = `<div class="empty">Пока нет избранных рецептов. Добавляйте ♡ на карточках.</div>`;
+        } else {
+            renderTo(favContainer, favRecipes);
+        }
     }
+
+    updateLevelDisplay();
+    renderLevelsRoad();
 }
 
 const loginForm = document.querySelector("#loginForm");
@@ -3979,9 +4019,6 @@ if (allFromFridge) {
     allFromFridge.addEventListener("click", () => switchTab("recipes"));
 }
 
-render();
-renderProfile();
-
 /* ================= FIRESTORE: ЗВЁЗДЫ ================= */
 
 async function loadStarsFromCloud() {
@@ -4188,13 +4225,25 @@ updateStarsBalance();
 /* ================= АДМИН-ПАНЕЛЬ ================= */
 
 function updateAdminPanel() {
-    const panel = document.querySelector("#adminPanel");
-    if (!panel) return;
     const user = currentUser();
+    const btn = document.querySelector("#adminTabBtn");
+    if (!btn) return;
+
     if (user && isAdminUser(user.email)) {
-        panel.classList.remove("hidden");
+        btn.classList.remove("hidden");
     } else {
-        panel.classList.add("hidden");
+        btn.classList.add("hidden");
+
+        const adminTab = document.querySelector('[data-chef-content="admin"]');
+        if (adminTab && adminTab.classList.contains("active")) {
+            document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
+            const profileTab = document.querySelector('[data-chef-content="profile"]');
+            if (profileTab) profileTab.classList.add("active");
+
+            document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
+            const profileBtn = document.querySelector('[data-chef-tab="profile"]');
+            if (profileBtn) profileBtn.classList.add("active");
+        }
     }
 }
 
@@ -4773,7 +4822,7 @@ function markRecipeCooked(recipeId) {
 }
 
 function getRecipeReward(isFirstTime) {
-    return isFirstTime ? 30 : 0;
+    return 0;
 }
 
 function openCookingMode(recipeId) {
@@ -4895,20 +4944,20 @@ document.querySelector("#cookingFinish")?.addEventListener("click", async () => 
     }
 
     const result = markRecipeCooked(currentCookingRecipe.id);
-    const reward = getRecipeReward(result.isFirstTime);
 
-    if (reward > 0) {
-        const newTotal = getStars() + reward;
-        await saveStarsToCloud(newTotal);
+    let expGained = 0;
+    if (result.isFirstTime) {
+        await addExp(5, "за рецепт");
+        expGained = 5;
     }
 
     checkAchievements();
 
     let subText = "";
     if (result.isFirstTime) {
-        subText = "🎉 Первое приготовление — награда 30 звёзд!";
+        subText = "🎉 Первое приготовление — +5 exp!";
     } else {
-        subText = `Вы готовили это блюдо ${result.count} раз(а). Награда начисляется только за первое приготовление.`;
+        subText = `Вы готовили это блюдо ${result.count} раз(а). Exp даётся только за первое приготовление.`;
     }
 
     const cookingBody = document.querySelector(".cooking-body");
@@ -4917,7 +4966,7 @@ document.querySelector("#cookingFinish")?.addEventListener("click", async () => 
             <div class="cooking-win-icon">${result.isFirstTime ? "🎉" : "👨‍🍳"}</div>
             <h1>${result.isFirstTime ? "Поздравляем!" : "Отлично!"}</h1>
             <p>Вы приготовили <b>${currentCookingRecipe.name}</b></p>
-            <div class="cooking-win-stars">${reward > 0 ? `⭐ +${reward} звёзд` : "⭐ 0 звёзд"}</div>
+            <div class="cooking-win-stars">${expGained > 0 ? `⚡ +${expGained} exp` : "⚡ 0 exp"}</div>
             <p style="font-size:14px;color:#999;">${subText}</p>
             <div class="cooking-win-buttons">
                 <button class="cooking-btn cooking-btn-next" id="backToHome">🏠 На главную</button>
@@ -5386,12 +5435,18 @@ async function initFriendsOnLoad() {
 }
 
 window.addEventListener("load", () => {
-    setTimeout(initFriendsOnLoad, 2500);
+    render();
+
+    setTimeout(() => {
+        if (currentUser()) {
+            loadExpFromCloud();
+        }
+        renderProfile();
+    }, 500);
 });
 
 initFriendsPage();
 
-/* ================= СТРАНИЦА ПРОФИЛЯ ДРУГА ================= */
 
 let currentFriendEmail = null;
 
@@ -5484,4 +5539,278 @@ async function openFriendPage(friend) {
 document.querySelector("#friendBackBtn")?.addEventListener("click", async () => {
     switchTab("friends");
     await renderFriends();
+});
+
+const LEVEL_TITLES = {
+    10: "Новичок",
+    25: "Ученик",
+    50: "Любитель",
+    100: "Шеф-повар",
+    500: "Мастер кухни",
+    1000: "Виртуальный Шеф",
+    2000: "Босс на кухне",
+    2800: "🏆 Легенда Виртуального Шефа"
+};
+
+const MAX_LEVEL = 2800;
+function expForNextLevel(level) {
+    if (level === 1) return 25;
+    if (level === 2) return 50;
+    if (level === 3) return 100;
+    return 100 + (level - 3) * 50;
+}
+
+function totalExpForLevel(level) {
+    let total = 0;
+    for (let i = 1; i < level; i++) {
+        total += expForNextLevel(i);
+    }
+    return total;
+}
+
+function getLevelFromExp(exp) {
+    let level = 1;
+    let accumulated = 0;
+    while (true) {
+        const need = expForNextLevel(level);
+        if (exp < accumulated + need) break;
+        accumulated += need;
+        level++;
+        if (level >= MAX_LEVEL) {
+            level = MAX_LEVEL;
+            break;
+        }
+    }
+    return level;
+}
+
+function getLevelProgress(exp) {
+    const level = getLevelFromExp(exp);
+    const totalBefore = totalExpForLevel(level);
+    const currentInLevel = exp - totalBefore;
+    const needed = expForNextLevel(level);
+    const percent = Math.min(100, Math.round((currentInLevel / needed) * 100));
+    return {
+        level,
+        currentInLevel,
+        needed,
+        percent,
+        totalExp: exp,
+        title: LEVEL_TITLES[level] || null
+    };
+}
+
+function getExp() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return 0;
+
+    if (isPremiumLevelUser(email)) {
+        return getExpForLevel(MAX_LEVEL);
+    }
+
+    return parseInt(localStorage.getItem("vc_exp_" + email) || "0");
+}
+
+function getExpForLevel(level) {
+    let total = 0;
+    for (let i = 1; i < level; i++) {
+        total += expForNextLevel(i);
+    }
+    return total;
+}
+
+async function saveExpToCloud(value) {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    localStorage.setItem("vc_exp_" + email, String(value));
+    if (!window.firebaseDB) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", email), { exp: value }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения exp:", e);
+    }
+}
+
+async function loadExpFromCloud() {
+    if (!window.firebaseDB) return;
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", email));
+        if (snap.exists()) {
+            const cloudExp = snap.data().exp || 0;
+            localStorage.setItem("vc_exp_" + email, String(cloudExp));
+            updateLevelDisplay();
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки exp:", e);
+    }
+}
+
+let _lastNotifiedLevel = 0;
+
+async function addExp(amount, reason) {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+
+    const oldExp = getExp();
+    const oldLevel = getLevelFromExp(oldExp);
+
+    const newExp = oldExp + amount;
+    const newLevel = getLevelFromExp(newExp);
+
+    await saveExpToCloud(newExp);
+    updateLevelDisplay();
+
+    if (newLevel > oldLevel) {
+        const title = LEVEL_TITLES[newLevel];
+        const msg = title
+            ? `🎉 Уровень ${newLevel} — ${title}!`
+            : `🎉 Уровень ${newLevel}!`;
+        showToast(msg);
+
+        if (title && newLevel !== oldLevel) {
+            setTimeout(() => {
+                showToast(`👑 Новый титул: ${title}`);
+            }, 1500);
+        }
+    } else if (reason) {
+        showToast(`+${amount} exp ${reason}`);
+    }
+}
+
+function updateLevelDisplay() {
+    const email = localStorage.getItem("vc_user_email");
+    const exp = getExp();
+    const prog = getLevelProgress(exp);
+
+    const isPremium = isPremiumLevelUser(email);
+
+    console.log(`[Уровень] ${prog.level}${isPremium ? " (PREMIUM)" : ""} — ${prog.currentInLevel}/${prog.needed} exp (${prog.percent}%)`);
+
+    const levelNumEl = document.querySelector("#profileLevelNum");
+    const levelBarEl = document.querySelector("#profileLevelBar");
+    const levelExpEl = document.querySelector("#profileLevelExp");
+    const levelTitleEl = document.querySelector("#profileLevelTitle");
+
+    if (levelNumEl) {
+        if (isPremium) {
+            levelNumEl.textContent = prog.level + " 👑";
+        } else {
+            levelNumEl.textContent = prog.level;
+        }
+    }
+    if (levelBarEl) levelBarEl.style.width = prog.percent + "%";
+
+    if (levelExpEl) {
+        if (isPremium) {
+            levelExpEl.textContent = "MAX";
+        } else {
+            levelExpEl.textContent = `${prog.currentInLevel} / ${prog.needed}`;
+        }
+    }
+
+    if (levelTitleEl) {
+        if (prog.title) {
+            levelTitleEl.textContent = prog.title;
+            levelTitleEl.style.display = "inline-block";
+        } else {
+            levelTitleEl.style.display = "none";
+        }
+    }
+}
+
+async function rewardCookingExp(recipeId, isFirstTime) {
+    if (!isFirstTime) return 0;
+    await addExp(5, "за рецепт");
+    return 5;
+}
+
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        if (currentUser()) {
+            loadExpFromCloud();
+            updateLevelDisplay();
+        }
+    }, 2000);
+});
+
+
+function renderLevelsRoad() {
+    const road = document.querySelector("#chefLevelsRoad");
+    if (!road) return;
+
+    const email = localStorage.getItem("vc_user_email");
+    const exp = getExp();
+    const currentLevel = getLevelFromExp(exp);
+    const isPremium = isPremiumLevelUser(email);
+
+    let startLevel = Math.max(1, currentLevel - 4);
+    let endLevel = Math.min(MAX_LEVEL, startLevel + 9);
+
+    if (endLevel === MAX_LEVEL) {
+        startLevel = Math.max(1, endLevel - 9);
+    }
+
+    let html = "";
+
+    if (startLevel > 1) {
+        html += `<div class="chef-level-item">
+            <div class="chef-level-item-icon">…</div>
+            <div class="chef-level-item-title">Ур. ${startLevel - 1}</div>
+        </div>`;
+    }
+
+    for (let i = startLevel; i <= endLevel; i++) {
+        let cls = "chef-level-item";
+        if (i < currentLevel) cls += " passed";
+        else if (i === currentLevel) cls += " current";
+
+        let title = `Ур. ${i}`;
+        if (LEVEL_TITLES[i]) title = LEVEL_TITLES[i];
+
+        let icon = "🔒";
+        if (i < currentLevel) icon = "✓";
+        else if (i === currentLevel) icon = "🔥";
+
+        if (isPremium && i > currentLevel) icon = "👑";
+
+        html += `
+            <div class="${cls}">
+                <div class="chef-level-item-icon">${icon}</div>
+                <div class="chef-level-item-title">${title}</div>
+            </div>
+        `;
+    }
+
+    if (endLevel < MAX_LEVEL) {
+        html += `<div class="chef-level-item">
+            <div class="chef-level-item-icon">…</div>
+            <div class="chef-level-item-title">Ур. ${endLevel + 1}</div>
+        </div>`;
+    }
+
+    road.innerHTML = html;
+}
+
+
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-chef-tab]");
+    if (!btn) return;
+
+    document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const tabName = btn.dataset.chefTab;
+
+    document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
+    const targetContent = document.querySelector(`[data-chef-content="${tabName}"]`);
+    if (targetContent) targetContent.classList.add("active");
+
+    if (tabName === "friends") {
+        renderRequests();
+        renderFriends();
+    }
 });
