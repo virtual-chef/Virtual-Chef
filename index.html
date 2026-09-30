@@ -35,11 +35,6 @@
                 <button class="nav-link" data-target="recipes">
                     🕮 <span>Рецепты</span>
                 </button>
-
-                <button class="nav-link" data-target="friends" id="friendsNavBtn">
-                    👥 <span>Друзья</span>
-                    <span class="nav-badge hidden" id="friendsBadge">0</span>
-                </button>
             </nav>
 
             <div class="nav-actions">
@@ -286,93 +281,209 @@
 
             <div id="userBlock" class="user-block hidden">
 
-                <!-- 👑 АДМИН-ПАНЕЛЬ -->
-                <div class="admin-panel hidden" id="adminPanel">
-                    <div class="admin-panel-header">
-                        <h2>👑 Админ-панель</h2>
-                        <span class="admin-badge">только для админов</span>
-                    </div>
+                <div class="chef-profile">
 
-                    <div class="admin-section">
-                        <h3>🎁 Начислить звёзды</h3>
-                        <p class="admin-desc">Введи email и сколько звёзд подарить</p>
-
-                        <div class="admin-form">
-                            <input type="email" id="adminEmail" placeholder="Email получателя">
-                            <input type="number" id="adminAmount" placeholder="Сколько ⭐" min="1">
-                            <button id="adminGiveStars">Начислить</button>
-                        </div>
-
-                        <div class="admin-quick-btns">
-                            <button data-quick-give="100">+100</button>
-                            <button data-quick-give="1000">+1К</button>
-                            <button data-quick-give="10000">+10К</button>
-                            <button data-quick-give="100000">+100К</button>
-                            <button data-quick-give="1000000">+1МЛН</button>
-                            <button data-quick-give="1000000000">+1МЛРД</button>
+                    <div class="chef-hero">
+                        <div class="chef-hero-inner">
+                            <div class="chef-avatar-block">
+                                <div class="profile-avatar" id="profileAvatar">👨‍🍳</div>
+                            </div>
+                            <div class="chef-hero-info">
+                                <h1 class="chef-name" id="profileName">—</h1>
+                                <p class="chef-realname" id="profileRealName">—</p>
+                                <p class="chef-bio">📅 С нами с <span id="profileDate">—</span></p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="admin-section admin-section-take">
-                        <h3>💀 Отобрать звёзды</h3>
-                        <p class="admin-desc">Введи email и сколько звёзд отобрать</p>
-
-                        <div class="admin-form">
-                            <input type="email" id="adminTakeEmail" placeholder="Email жертвы">
-                            <input type="number" id="adminTakeAmount" placeholder="Сколько ⭐" min="1">
-                            <button id="adminTakeStars" class="admin-btn-take">Отобрать</button>
+                    <div class="chef-stats">
+                        <div class="chef-stat">
+                            <span class="chef-stat-icon">🍳</span>
+                            <div>
+                                <b id="statOpened">0</b>
+                                <small>Рецептов</small>
+                            </div>
+                        </div>
+                        <div class="chef-stat">
+                            <span class="chef-stat-icon">❤️</span>
+                            <div>
+                                <b id="statFavs">0</b>
+                                <small>Понравилось</small>
+                            </div>
+                        </div>
+                        <div class="chef-stat">
+                            <span class="chef-stat-icon">👥</span>
+                            <div>
+                                <b id="profileFriendsCount">0</b>
+                                <small>Друзей</small>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="chef-level-block">
+                        <div class="chef-level-badge">
+                            <span class="chef-level-icon">👨‍🍳</span>
+                            <div class="chef-level-text">
+                                <b>Уровень <span id="profileLevelNum">1</span></b>
+                                <small id="profileLevelTitle" style="display:none;">—</small>
+                                <small>Начинающий шеф</small>
+                            </div>
+                        </div>
+                        <div class="chef-level-progress">
+                            <div class="chef-level-bar">
+                                <div class="chef-level-fill" id="profileLevelBar" style="width: 0%"></div>
+                            </div>
+                            <span class="chef-level-exp" id="profileLevelExp">0 / 25</span>
+                        </div>
+                    </div>
+
+                    <div class="chef-content">
+
+                        <aside class="chef-sidebar">
+                            <button class="chef-sidebar-btn active" data-chef-tab="profile">
+                                <span>👤</span> Профиль
+                            </button>
+                            <button class="chef-sidebar-btn" data-chef-tab="recipes">
+                                <span>🍳</span> Мои рецепты
+                            </button>
+                            <button class="chef-sidebar-btn" data-chef-tab="favorites">
+                                <span>❤️</span> Избранное
+                            </button>
+                            <button class="chef-sidebar-btn" data-chef-tab="friends">
+                                <span>👥</span> Друзья
+                            </button>
+                            <button class="chef-sidebar-btn" data-chef-tab="notifications">
+                                <span>🔔</span> Уведомления
+                            </button>
+                            <button class="chef-sidebar-btn admin-only-btn hidden" data-chef-tab="admin"
+                                id="adminTabBtn">
+                                <span>👑</span> Админ-панель
+                            </button>
+                            <button class="chef-sidebar-btn" data-chef-tab="settings">
+                                <span>⚙️</span> Настройки
+                            </button>
+                        </aside>
+
+                        <div class="chef-main">
+
+                            <div class="chef-tab-content active" data-chef-content="profile">
+                                <div class="chef-section">
+                                    <div class="chef-section-head">
+                                        <h2>🏆 Достижения</h2>
+                                        <span class="chef-section-count" id="vkAchvCount">0/28</span>
+                                    </div>
+                                    <div class="chef-achievements" id="achievementsGrid"></div>
+                                </div>
+
+                                <div class="chef-section">
+                                    <div class="chef-section-head">
+                                        <h2>📈 Мои уровни</h2>
+                                    </div>
+                                    <div class="chef-levels-road" id="chefLevelsRoad"></div>
+                                </div>
+                            </div>
+
+                            <div class="chef-tab-content" data-chef-content="recipes">
+                                <div class="chef-section">
+                                    <h2>🍳 Мои рецепты</h2>
+                                    <p class="muted">Здесь будут ваши собственные рецепты (скоро)</p>
+                                </div>
+                            </div>
+
+                            <div class="chef-tab-content" data-chef-content="favorites">
+                                <div class="chef-section">
+                                    <h2>❤️ Избранные рецепты</h2>
+                                    <div class="recipe-grid" id="profileFavorites"></div>
+                                </div>
+                            </div>
+
+                            <div class="chef-tab-content" data-chef-content="friends">
+
+                                <div class="chef-section">
+                                    <h2>🔍 Найти друга</h2>
+                                    <p class="muted">Введи ник друга, чтобы отправить заявку</p>
+                                    <form id="friendsSearchForm" class="chef-friends-search">
+                                        <input type="text" id="friendsSearchInput" placeholder="Ник друга (без @)">
+                                        <button type="submit">🔍 Найти</button>
+                                    </form>
+                                    <div id="friendsSearchResult"></div>
+                                </div>
+
+                                <div class="chef-section" id="requestsSection">
+                                    <h2>📨 Заявки в друзья <span id="requestsCount">(0)</span></h2>
+                                    <div id="requestsList"></div>
+                                </div>
+
+                                <div class="chef-section">
+                                    <h2>🤝 Мои друзья <span id="friendsCount">(0)</span></h2>
+                                    <div id="friendsList"></div>
+                                </div>
+
+                            </div>
+
+                            <div class="chef-tab-content" data-chef-content="notifications">
+                                <div class="chef-section">
+                                    <h2>🔔 Уведомления</h2>
+                                    <p class="muted">Здесь будут ваши уведомления (скоро)</p>
+                                </div>
+                            </div>
+
+                            <!-- 👑 АДМИН-ПАНЕЛЬ -->
+                            <div class="chef-tab-content" data-chef-content="admin">
+                                <div class="chef-section">
+                                    <div class="chef-section-head">
+                                        <h2>👑 Админ-панель</h2>
+                                        <span class="admin-badge">только для админов</span>
+                                    </div>
+
+                                    <div class="admin-section">
+                                        <h3>🎁 Начислить звёзды</h3>
+                                        <p class="admin-desc">Введи email и сколько звёзд подарить</p>
+                                        <div class="admin-form">
+                                            <input type="email" id="adminEmail" placeholder="Email получателя">
+                                            <input type="number" id="adminAmount" placeholder="Сколько ⭐" min="1">
+                                            <button id="adminGiveStars">Начислить</button>
+                                        </div>
+                                        <div class="admin-quick-btns">
+                                            <button data-quick-give="100">+100</button>
+                                            <button data-quick-give="1000">+1К</button>
+                                            <button data-quick-give="10000">+10К</button>
+                                            <button data-quick-give="100000">+100К</button>
+                                            <button data-quick-give="1000000">+1МЛН</button>
+                                            <button data-quick-give="1000000000">+1МЛРД</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="admin-section admin-section-take">
+                                        <h3>💀 Отобрать звёзды</h3>
+                                        <p class="admin-desc">Введи email и сколько звёзд отобрать</p>
+                                        <div class="admin-form">
+                                            <input type="email" id="adminTakeEmail" placeholder="Email жертвы">
+                                            <input type="number" id="adminTakeAmount" placeholder="Сколько ⭐" min="1">
+                                            <button id="adminTakeStars" class="admin-btn-take">Отобрать</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chef-tab-content" data-chef-content="settings">
+                                <div class="chef-section">
+                                    <h2>⚙️ Настройки</h2>
+                                    <p class="muted">Здесь будут настройки профиля (скоро)</p>
+                                </div>
+                                <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
+                            </div>
+
+                        </div>
+
+                    </div>
                 </div>
-
-                <div class="profile-card">
-
-                    <div class="profile-avatar" id="profileAvatar">👨‍🍳</div>
-                    <div class="profile-info">
-                        <h2 id="profileName">—</h2>
-                        <p id="profileEmail" class="muted">—</p>
-                        <p class="muted">С нами с <span id="profileDate">—</span></p>
-                        <p class="muted">🤝 Друзей: <b id="profileFriendsCount">0</b></p>
-                    </div>
-                    <button class="logout-btn" id="logoutBtn">Выйти</button>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-icon">🍳</span>
-                        <b id="statOpened">0</b>
-                        <small>Рецептов открыто</small>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">❤️</span>
-                        <b id="statFavs">0</b>
-                        <small>В избранном</small>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">🏆</span>
-                        <b id="statAchv">0</b>
-                        <small>Достижений</small>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-icon">📅</span>
-                        <b id="statDays">1</b>
-                        <small>Дней на сайте</small>
-                    </div>
-                </div>
-
-                <h2 class="block-title">🏆 Достижения</h2>
-                <div class="achievements-grid" id="achievementsGrid"></div>
-
-                <h2 class="block-title">❤️ Избранные рецепты</h2>
-                <div class="recipe-grid" id="profileFavorites"></div>
 
             </div>
 
         </section>
 
     </main>
-
-
     <!-- ================= КАЛЕНДАРЬ НАГРАД ================= -->
     <main id="page-rewards" class="page">
 
