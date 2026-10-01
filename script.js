@@ -5815,24 +5815,16 @@ document.addEventListener("click", (e) => {
     }
 });
 
-
-/* ================= МОБИЛЬНАЯ / ПК ================= */
-
 const VIEW_MODE_KEY = "vc_view_mode";
 
 function applyViewMode() {
     const mode = localStorage.getItem(VIEW_MODE_KEY) || "auto";
-    const body = document.body;
-
-    body.classList.remove("mobile-view", "desktop-view");
-
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-        || window.innerWidth < 851;
+    document.body.classList.remove("mobile-view", "desktop-view");
 
     if (mode === "desktop") {
-        body.classList.add("desktop-view");
+        document.body.classList.add("desktop-view");
     } else if (mode === "mobile") {
-        body.classList.add("mobile-view");
+        document.body.classList.add("mobile-view");
     }
 
     updateViewToggleIcon();
@@ -5843,10 +5835,6 @@ function updateViewToggleIcon() {
     if (!btn) return;
 
     const mode = localStorage.getItem(VIEW_MODE_KEY) || "auto";
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-        || window.innerWidth < 851;
-
-    if (!isMobile) return;
 
     if (mode === "desktop") {
         btn.textContent = "📱";
@@ -5862,30 +5850,8 @@ function toggleViewMode() {
     const next = (current === "desktop") ? "mobile" : "desktop";
 
     localStorage.setItem(VIEW_MODE_KEY, next);
-
-    const btn = document.querySelector("#viewToggle");
-    if (btn) {
-        btn.style.transform = "scale(0.8)";
-        setTimeout(() => {
-            btn.style.transform = "";
-        }, 200);
-    }
-
     applyViewMode();
-
     showToast(next === "desktop" ? "🖥 Версия для ПК" : "📱 Мобильная версия");
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    applyViewMode();
-
-    document.querySelector("#viewToggle")?.addEventListener("click", toggleViewMode);
-});
-
-window.addEventListener("resize", () => {
-    if (window.innerWidth >= 851) {
-        document.body.classList.remove("mobile-view", "desktop-view");
-    } else {
-        applyViewMode();
-    }
-});
+applyViewMode();
