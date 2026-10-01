@@ -3953,3 +3953,256 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+
+/* ================ МОБИЛЬНАЯ / ПК ================= */
+
+.view-toggle-btn {
+    font-size: 22px !important;
+    padding: 4px 8px !important;
+    border-radius: 10px !important;
+    transition: .2s;
+}
+
+.view-toggle-btn:hover {
+    background: #fff5f5 !important;
+    transform: scale(1.12);
+}
+
+@media (min-width: 851px) {
+    .view-toggle-btn {
+        display: none !important;
+    }
+}
+
+body.mobile-view .view-toggle-btn {
+    display: block !important;
+}
+
+@media (min-width: 851px) {
+    body.mobile-view .view-toggle-btn {
+        display: none !important;
+    }
+}
+
+body.desktop-view {
+    min-width: 1200px;
+}
+
+body.desktop-view .container {
+    width: min(100% - 80px, 1120px);
+}
+
+body.desktop-view .nav nav {
+    margin-left: 90px;
+    gap: 13px;
+}
+
+body.desktop-view .nav-link span {
+    display: inline;
+}
+
+body.desktop-view .benefit-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+body.desktop-view .benefits {
+    height: 91px;
+    padding: 0;
+}
+
+body.desktop-view .hero h1 {
+    font-size: 44px;
+}
+
+body.desktop-view .hero h2 {
+    font-size: 21px;
+}
+
+body.desktop-view .hero p {
+    font-size: 12px;
+}
+
+body.desktop-view .search {
+    width: 385px;
+}
+
+body.desktop-view .content-grid {
+    grid-template-columns: 1fr 290px;
+}
+
+body.desktop-view .recipe-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+body.desktop-view #recipeGrid .recipe img {
+    height: 90px;
+}
+
+body.desktop-view .recipe img {
+    height: 107px;
+}
+
+body.desktop-view .signature {
+    display: block;
+}
+
+body.desktop-view .fridge-hero {
+    min-height: 300px;
+    background-position: center 40%;
+}
+
+body.desktop-view .fridge-hero h1 {
+    font-size: 48px;
+}
+
+body.desktop-view .fridge-hero p {
+    font-size: 14px;
+}
+
+body.desktop-view .fridge-handwrite {
+    display: inline-block;
+}
+
+body.desktop-view .fridge-results-head {
+    flex-direction: row;
+}
+
+body.desktop-view .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+body.desktop-view .achievements-grid {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+body.desktop-view .profile-card {
+    flex-direction: row;
+    text-align: left;
+}
+
+body.desktop-view .rewards-stats {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+body.desktop-view .rewards-calendar tbody td {
+    padding: 14px 8px;
+    height: 110px;
+}
+
+body.desktop-view .status-badge {
+    padding: 3px 12px;
+    font-size: 11px;
+}
+
+body.desktop-view .day-reward {
+    font-size: 13px;
+}
+
+body.desktop-view .chef-content {
+    grid-template-columns: 260px 1fr;
+}
+
+body.desktop-view .chef-sidebar {
+    position: sticky;
+    top: 90px;
+    flex-direction: column;
+    overflow-x: visible;
+    padding: 10px;
+}
+
+body.desktop-view .chef-sidebar-btn {
+    flex: none;
+    white-space: normal;
+    padding: 12px 14px;
+    font-size: 14px;
+}
+
+body.desktop-view .chef-sidebar-btn span {
+    font-size: 18px;
+}
+
+body.desktop-view .chef-stats {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+body.desktop-view .chef-achievements {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+body.desktop-view .chef-hero-inner {
+    flex-direction: row;
+    text-align: left;
+    gap: 20px;
+}
+
+body.desktop-view .chef-hero-info {
+    text-align: left;
+}
+
+body.desktop-view .chef-bio {
+    text-align: left;
+    margin: 0;
+}
+
+body.desktop-view .chef-level-block {
+    flex-direction: row;
+    text-align: left;
+}
+
+body.desktop-view .chef-level-progress {
+    width: auto;
+}
+
+body.desktop-view .chef-section {
+    padding: 22px;
+}
+
+body.desktop-view .friends-search {
+    padding: 24px;
+}
+
+body.desktop-view #friendsSearchForm {
+    flex-direction: row;
+}
+
+body.desktop-view .friend-row {
+    flex-wrap: nowrap;
+}
+
+body.desktop-view .friend-row .actions {
+    width: auto;
+}
+
+body.desktop-view .friend-row .actions button {
+    flex: none;
+}
+
+body.desktop-view .friend-result-card {
+    flex-wrap: nowrap;
+}
+
+body.desktop-view .gift-form-friend {
+    flex-direction: row;
+}
+
+body.desktop-view .admin-form {
+    grid-template-columns: 1fr 160px 160px;
+}
+
+body.desktop-view .admin-form button {
+    grid-column: auto;
+}
+
+body.desktop-view .shop-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+body.desktop-view .shop-tabs {
+    gap: 10px;
+}
+
+body.desktop-view .shop-tab {
+    padding: 12px 22px;
+    font-size: 14px;
+}
