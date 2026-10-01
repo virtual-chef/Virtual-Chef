@@ -5691,7 +5691,11 @@ function getLevelProgress(exp) {
     const totalBefore = totalExpForLevel(level);
     const currentInLevel = exp - totalBefore;
     const needed = expForNextLevel(level);
-    const percent = Math.min(100, Math.round((currentInLevel / needed) * 100));
+
+    const percent = (level >= MAX_LEVEL)
+        ? 100
+        : Math.min(100, Math.round((currentInLevel / needed) * 100));
+
     return {
         level,
         currentInLevel,
