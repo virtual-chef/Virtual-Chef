@@ -5462,57 +5462,66 @@ async function openFriendPage(friend) {
     else if (isFriend) displayName = "🤝 " + displayName;
     else if (isSuper) displayName = "⭐ " + displayName;
 
-    document.querySelector("#friendName").textContent = displayName;
-    document.querySelector("#friendNickDisplay").textContent = "@" + (friend.nick || "без_ника");
+    const setText = (selector, value) => {
+        const el = document.querySelector(selector);
+        if (el) {
+            el.textContent = value;
+        } else {
+            console.warn("⚠️ Не найден элемент:", selector);
+        }
+    };
+
+    setText("#friendPageTitle", "◉ " + displayName);  // старый ID (в hero) — оставим
+    setText("#friendName", displayName);              // новый ID
+    setText("#friendNickDisplay", "@" + (friend.nick || "без_ника"));
 
     const avatarEl = document.querySelector("#friendAvatar");
-    const friendLetter = (friend.name || "?")[0].toUpperCase();
-    avatarEl.setAttribute("data-letter", friendLetter);
-    avatarEl.innerHTML = "";
-
-    if (friend.activeAvatar) {
-        avatarEl.innerHTML = `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`;
+    if (avatarEl) {
+        const friendLetter = (friend.name || "?")[0].toUpperCase();
+        avatarEl.setAttribute("data-letter", friendLetter);
+        avatarEl.innerHTML = friend.activeAvatar
+            ? `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`
+            : `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
+        avatarEl.className = "profile-avatar";
+        if (friend.activeFrame) {
+            avatarEl.classList.add("frame-" + friend.activeFrame);
+        }
     } else {
-        avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
-    }
-    avatarEl.className = "profile-avatar";
-    if (friend.activeFrame) {
-        avatarEl.classList.add("frame-" + friend.activeFrame);
+        console.warn("⚠️ Не найден #friendAvatar");
     }
 
     const registered = friend.registered || Date.now();
-    document.querySelector("#friendDate").textContent =
-        new Date(registered).toLocaleDateString("ru-RU", {
-            day: "2-digit", month: "2-digit", year: "numeric"
-        });
+    setText("#friendDate", new Date(registered).toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    }));
 
     const achievements = friend.achievements || [];
-    document.querySelector("#friendCooked").textContent = friend.stats?.opened || 0;
-    document.querySelector("#friendAchv").textContent = `${achievements.length}/${ACHIEVEMENTS.length}`;
-    document.querySelector("#friendAchvCount").textContent = `${achievements.length}/${ACHIEVEMENTS.length}`;
+    setText("#friendCooked", friend.stats?.opened || 0);
+    setText("#friendAchv", `${achievements.length}/${ACHIEVEMENTS.length}`);
+    setText("#friendAchvCount", `${achievements.length}/${ACHIEVEMENTS.length}`);
 
     const friendFriends = friend.friends || [];
-    document.querySelector("#friendFriendsCount").textContent = friendFriends.length;
-    document.querySelector("#friendFriendsCountTab").textContent = `(${friendFriends.length})`;
+    setText("#friendFriendsCount", friendFriends.length);
+    setText("#friendFriendsCountTab", `(${friendFriends.length})`);
 
     const friendExp = friend.exp || 0;
     const friendProg = getLevelProgress(friendExp);
     const friendPremium = isPremiumLevelUser(friend.email);
 
-    const lvlNumEl = document.querySelector("#friendLevelNum");
-    if (lvlNumEl) {
-        lvlNumEl.textContent = friendPremium ? friendProg.level + " 👑" : friendProg.level;
-    }
+    setText("#friendLevelNum",
+        friendPremium ? friendProg.level + " 👑" : friendProg.level
+    );
 
     const lvlBarEl = document.querySelector("#friendLevelBar");
-    if (lvlBarEl) lvlBarEl.style.width = friendProg.percent + "%";
-
-    const lvlExpEl = document.querySelector("#friendLevelExp");
-    if (lvlExpEl) {
-        lvlExpEl.textContent = friendPremium
-            ? "MAX"
-            : `${friendProg.currentInLevel} / ${friendProg.needed}`;
+    if (lvlBarEl) {
+        lvlBarEl.style.width = friendProg.percent + "%";
     }
+
+    setText("#friendLevelExp",
+        friendPremium ? "MAX" : `${friendProg.currentInLevel} / ${friendProg.needed}`
+    );
 
     const lvlTitleEl = document.querySelector("#friendLevelTitle");
     if (lvlTitleEl) {
@@ -5525,49 +5534,59 @@ async function openFriendPage(friend) {
     }
 
     const grid = document.querySelector("#friendAchievementsGrid");
-    grid.innerHTML = ACHIEVEMENTS.map(a => {
-        const unlocked = achievements.includes(a.id);
-        const percent = unlocked ? 100 : 0;
-        const color = getProgressColor(percent);
-        return `
-            <div class="achievement ${unlocked ? "unlocked" : "locked"}">
-                <span class="ach-icon">${a.icon}</span>
-                <b>${a.name}</b>
-                <small>${a.desc}</small>
-                <div class="ach-progress">
-                    <div class="ach-bar">
-                        <div class="ach-fill ${color}" style="width: ${percent}%"></div>
+    if (grid) {
+        grid.innerHTML = ACHIEVEMENTS.map(a => {
+            const unlocked = achievements.includes(a.id);
+            const percent = unlocked ? 100 : 0;
+            const color = getProgressColor(percent);
+            return `
+                <div class="achievement ${unlocked ? "unlocked" : "locked"}">
+                    <span class="ach-icon">${a.icon}</span>
+                    <b>${a.name}</b>
+                    <small>${a.desc}</small>
+                    <div class="ach-progress">
+                        <div class="ach-bar">
+                            <div class="ach-fill ${color}" style="width: ${percent}%"></div>
+                        </div>
+                        <span class="ach-text">${unlocked ? "✓" : "—"}</span>
                     </div>
-                    <span class="ach-text">${unlocked ? "✓" : "—"}</span>
-                </div>
-            </div>`;
-    }).join("");
+                </div>`;
+        }).join("");
+    } else {
+        console.warn("⚠️ Не найден #friendAchievementsGrid");
+    }
 
     renderFriendLevelsRoad(friendProg.level, friendPremium);
 
-    const friendsOfFriend = await Promise.all(
-        friendFriends.map(e => getUserData(e))
-    );
-    const friendsListEl = document.querySelector("#friendFriendsList");
-    if (friendsOfFriend.filter(f => f).length === 0) {
-        friendsListEl.innerHTML = `<span class="friend-chip">Нет друзей</span>`;
-    } else {
-        friendsListEl.innerHTML = friendsOfFriend
-            .filter(f => f)
-            .map(f => `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`)
-            .join("");
+    try {
+        const friendsOfFriend = await Promise.all(
+            friendFriends.map(e => getUserData(e))
+        );
+        const friendsListEl = document.querySelector("#friendFriendsList");
+        if (friendsListEl) {
+            const valid = friendsOfFriend.filter(f => f);
+            friendsListEl.innerHTML = valid.length === 0
+                ? `<span class="friend-chip">Нет друзей</span>`
+                : valid.map(f =>
+                    `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`
+                ).join("");
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки друзей друга:", e);
     }
 
     const giftBtn = document.querySelector("#friendGiftBtn");
     const giftInput = document.querySelector("#friendGiftAmount");
-    giftBtn.onclick = async () => {
-        const amount = parseInt(giftInput.value);
-        if (!amount || amount < 1) {
-            showToast("❌ Введи число больше 0");
-            return;
-        }
-        await giveStarsToFriend(friend.email, amount);
-    };
+    if (giftBtn && giftInput) {
+        giftBtn.onclick = async () => {
+            const amount = parseInt(giftInput.value);
+            if (!amount || amount < 1) {
+                showToast("❌ Введи число больше 0");
+                return;
+            }
+            await giveStarsToFriend(friend.email, amount);
+        };
+    }
 
     document.querySelectorAll("[data-friend-tab]").forEach(btn => {
         btn.onclick = () => {
@@ -5581,7 +5600,6 @@ async function openFriendPage(friend) {
 
     switchTab("friend");
 }
-
 function renderFriendLevelsRoad(currentLevel, isPremium) {
     const road = document.querySelector("#friendLevelsRoad");
     if (!road) return;
