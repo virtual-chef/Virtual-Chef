@@ -4206,3 +4206,112 @@ body.desktop-view .shop-tab {
     padding: 12px 22px;
     font-size: 14px;
 }
+
+/* ================= 🏆 ТИТУЛЫ ================= */
+
+.chef-title-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 260px;
+    height: 60px;
+    background-image: url("images/title-badge.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 0 0 0 auto;
+    position: relative;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 10px rgba(217, 119, 6, .4));
+    animation: titleFloat 3s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.chef-title-badge span {
+    display: block;
+    color: #fff8e7;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-shadow:
+        0 1px 0 #7a3d00,
+        0 2px 4px rgba(0, 0, 0, .6);
+    padding: 0 40px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    z-index: 2;
+    position: relative;
+}
+
+@keyframes titleFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+.chef-title-badge.hidden {
+    display: none !important;
+}
+
+@media (max-width: 520px) {
+    .chef-title-badge {
+        width: 200px;
+        height: 46px;
+    }
+
+    .chef-title-badge span {
+        font-size: 12px;
+        padding: 0 30px;
+    }
+}
+
+.shop-title-preview {
+    width: 100%;
+    height: 60px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url("images/title-badge.png");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #fff8e7;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 0 #7a3d00, 0 2px 4px rgba(0, 0, 0, .6);
+    padding: 0 30px;
+    text-align: center;
+    filter: drop-shadow(0 3px 8px rgba(217, 119, 6, .35));
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.shop-title-preview.empty {
+    opacity: .4;
+    filter: grayscale(1);
+}
+
+@media (max-width: 900px) {
+    .chef-hero-inner {
+        flex-wrap: wrap;
+    }
+
+    .chef-title-badge {
+        width: 100%;
+        max-width: 260px;
+        margin: 10px auto 0;
+    }
+}
