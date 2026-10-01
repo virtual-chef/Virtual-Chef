@@ -750,98 +750,99 @@
 
         </section>
 
-        <!-- ================= СТРАНИЦА ГОТОВКИ ================= -->
-        <main id="page-cooking" class="page">
+    </main>
 
-            <section class="cooking-header">
-                <div class="container">
-                    <button class="cooking-back" id="cookingBack">← Назад к рецепту</button>
-                    <h2 id="cookingRecipeName">Рецепт</h2>
-                </div>
-            </section>
+    <!-- ================= СТРАНИЦА ГОТОВКИ ================= -->
+    <main id="page-cooking" class="page">
 
-            <section class="container cooking-body">
-
-                <div class="cooking-step-badge">
-                    Шаг <span id="cookingStepNum">1</span> из <span id="cookingStepTotal">5</span>
-                </div>
-
-                <div class="cooking-step-content" id="cookingStepContent">
-                    Текст шага
-                </div>
-
-                <div class="cooking-dots" id="cookingDots"></div>
-
-                <div class="cooking-nav">
-                    <button class="cooking-btn cooking-btn-prev" id="cookingPrev" disabled>← Назад</button>
-                    <button class="cooking-btn cooking-btn-next" id="cookingNext">Дальше →</button>
-                    <button class="cooking-btn cooking-btn-finish hidden" id="cookingFinish">✅ Готово!</button>
-                </div>
-
-            </section>
-
-        </main>
-
-
-        <div class="modal hidden" id="modal">
-            <div class="modal-box">
-                <button class="close" id="closeModal">×</button>
-                <div id="modalContent"></div>
+        <section class="cooking-header">
+            <div class="container">
+                <button class="cooking-back" id="cookingBack">← Назад к рецепту</button>
+                <h2 id="cookingRecipeName">Рецепт</h2>
             </div>
+        </section>
+
+        <section class="container cooking-body">
+
+            <div class="cooking-step-badge">
+                Шаг <span id="cookingStepNum">1</span> из <span id="cookingStepTotal">5</span>
+            </div>
+
+            <div class="cooking-step-content" id="cookingStepContent">
+                Текст шага
+            </div>
+
+            <div class="cooking-dots" id="cookingDots"></div>
+
+            <div class="cooking-nav">
+                <button class="cooking-btn cooking-btn-prev" id="cookingPrev" disabled>← Назад</button>
+                <button class="cooking-btn cooking-btn-next" id="cookingNext">Дальше →</button>
+                <button class="cooking-btn cooking-btn-finish hidden" id="cookingFinish">✅ Готово!</button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <div class="modal hidden" id="modal">
+        <div class="modal-box">
+            <button class="close" id="closeModal">×</button>
+            <div id="modalContent"></div>
         </div>
+    </div>
 
-        <!-- Firebase SDK -->
-        <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-            import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
-            import {
-                getFirestore, doc, getDoc, setDoc, updateDoc,
-                collection, query, where, getDocs, deleteDoc, addDoc, arrayUnion, arrayRemove
-            } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+        import {
+            getFirestore, doc, getDoc, setDoc, updateDoc,
+            collection, query, where, getDocs, deleteDoc, addDoc, arrayUnion, arrayRemove
+        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
-            const firebaseConfig = {
-                apiKey: "AIzaSyCYCVwuK_G24YqwnyyDTKODxFLMJuvqkLM",
-                authDomain: "virtual-chef-b8dae.firebaseapp.com",
-                projectId: "virtual-chef-b8dae",
-                storageBucket: "virtual-chef-b8dae.firebasestorage.app",
-                messagingSenderId: "9943912495",
-                appId: "1:9943912495:web:c983c5fa6556b4fb93b6da"
-            };
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYCVwuK_G24YqwnyyDTKODxFLMJuvqkLM",
+            authDomain: "virtual-chef-b8dae.firebaseapp.com",
+            projectId: "virtual-chef-b8dae",
+            storageBucket: "virtual-chef-b8dae.firebasestorage.app",
+            messagingSenderId: "9943912495",
+            appId: "1:9943912495:web:c983c5fa6556b4fb93b6da"
+        };
 
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-            window.firebaseDB = {
-                db: db,
-                doc: doc,
-                getDoc: getDoc,
-                setDoc: setDoc,
-                updateDoc: updateDoc,
-                collection: collection,
-                query: query,
-                where: where,
-                getDocs: getDocs,
-                deleteDoc: deleteDoc,
-                addDoc: addDoc,
-                arrayUnion: arrayUnion,
-                arrayRemove: arrayRemove
-            };
+        window.firebaseDB = {
+            db: db,
+            doc: doc,
+            getDoc: getDoc,
+            setDoc: setDoc,
+            updateDoc: updateDoc,
+            collection: collection,
+            query: query,
+            where: where,
+            getDocs: getDocs,
+            deleteDoc: deleteDoc,
+            addDoc: addDoc,
+            arrayUnion: arrayUnion,
+            arrayRemove: arrayRemove
+        };
 
-            window.firebaseAuth = {
-                auth: auth,
-                createUserWithEmailAndPassword: createUserWithEmailAndPassword,
-                signInWithEmailAndPassword: signInWithEmailAndPassword,
-                signOut: signOut,
-                onAuthStateChanged: onAuthStateChanged,
-                updateProfile: updateProfile
-            };
+        window.firebaseAuth = {
+            auth: auth,
+            createUserWithEmailAndPassword: createUserWithEmailAndPassword,
+            signInWithEmailAndPassword: signInWithEmailAndPassword,
+            signOut: signOut,
+            onAuthStateChanged: onAuthStateChanged,
+            updateProfile: updateProfile
+        };
 
-            console.log("✅ Firebase подключён");
-        </script>
+        console.log("✅ Firebase подключён");
+    </script>
 
-        <script src="script.js"></script>
+    <script src="script.js"></script>
 
 </body>
 
