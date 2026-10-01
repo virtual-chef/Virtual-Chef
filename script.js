@@ -5462,13 +5462,12 @@ async function openFriendPage(friend) {
     else if (isFriend) displayName = "🤝 " + displayName;
     else if (isSuper) displayName = "⭐ " + displayName;
 
-    document.querySelector("#friendPageTitle").textContent = "◉ " + displayName;
     document.querySelector("#friendName").textContent = displayName;
+    document.querySelector("#friendNickDisplay").textContent = "@" + (friend.nick || "без_ника");
 
     const avatarEl = document.querySelector("#friendAvatar");
     const friendLetter = (friend.name || "?")[0].toUpperCase();
     avatarEl.setAttribute("data-letter", friendLetter);
-
     avatarEl.innerHTML = "";
 
     if (friend.activeAvatar) {
@@ -5481,25 +5480,74 @@ async function openFriendPage(friend) {
         avatarEl.classList.add("frame-" + friend.activeFrame);
     }
 
-    document.querySelector("#friendNickDisplay").textContent = "@" + (friend.nick || "без_ника");
-
     const registered = friend.registered || Date.now();
-    const registeredDate = new Date(registered).toLocaleDateString("ru-RU");
-    document.querySelector("#friendDate").textContent = registeredDate;
+    document.querySelector("#friendDate").textContent =
+        new Date(registered).toLocaleDateString("ru-RU", {
+            day: "2-digit", month: "2-digit", year: "numeric"
+        });
 
     const achievements = friend.achievements || [];
-    document.querySelector("#friendStars").textContent = friend.stars || 0;
-    document.querySelector("#friendAchv").textContent = `${achievements.length}/${ACHIEVEMENTS.length}`;
-    document.querySelector("#friendDays").textContent = Math.max(1, Math.floor((Date.now() - registered) / 86400000) + 1);
     document.querySelector("#friendCooked").textContent = friend.stats?.opened || 0;
+    document.querySelector("#friendAchv").textContent = `${achievements.length}/${ACHIEVEMENTS.length}`;
+    document.querySelector("#friendAchvCount").textContent = `${achievements.length}/${ACHIEVEMENTS.length}`;
 
     const friendFriends = friend.friends || [];
     document.querySelector("#friendFriendsCount").textContent = friendFriends.length;
+    document.querySelector("#friendFriendsCountTab").textContent = `(${friendFriends.length})`;
+
+    const friendExp = friend.exp || 0;
+    const friendProg = getLevelProgress(friendExp);
+    const friendPremium = isPremiumLevelUser(friend.email);
+
+    const lvlNumEl = document.querySelector("#friendLevelNum");
+    if (lvlNumEl) {
+        lvlNumEl.textContent = friendPremium ? friendProg.level + " 👑" : friendProg.level;
+    }
+
+    const lvlBarEl = document.querySelector("#friendLevelBar");
+    if (lvlBarEl) lvlBarEl.style.width = friendProg.percent + "%";
+
+    const lvlExpEl = document.querySelector("#friendLevelExp");
+    if (lvlExpEl) {
+        lvlExpEl.textContent = friendPremium
+            ? "MAX"
+            : `${friendProg.currentInLevel} / ${friendProg.needed}`;
+    }
+
+    const lvlTitleEl = document.querySelector("#friendLevelTitle");
+    if (lvlTitleEl) {
+        if (friendProg.title) {
+            lvlTitleEl.textContent = friendProg.title;
+            lvlTitleEl.style.display = "inline-block";
+        } else {
+            lvlTitleEl.style.display = "none";
+        }
+    }
+
+    const grid = document.querySelector("#friendAchievementsGrid");
+    grid.innerHTML = ACHIEVEMENTS.map(a => {
+        const unlocked = achievements.includes(a.id);
+        const percent = unlocked ? 100 : 0;
+        const color = getProgressColor(percent);
+        return `
+            <div class="achievement ${unlocked ? "unlocked" : "locked"}">
+                <span class="ach-icon">${a.icon}</span>
+                <b>${a.name}</b>
+                <small>${a.desc}</small>
+                <div class="ach-progress">
+                    <div class="ach-bar">
+                        <div class="ach-fill ${color}" style="width: ${percent}%"></div>
+                    </div>
+                    <span class="ach-text">${unlocked ? "✓" : "—"}</span>
+                </div>
+            </div>`;
+    }).join("");
+
+    renderFriendLevelsRoad(friendProg.level, friendPremium);
 
     const friendsOfFriend = await Promise.all(
         friendFriends.map(e => getUserData(e))
     );
-
     const friendsListEl = document.querySelector("#friendFriendsList");
     if (friendsOfFriend.filter(f => f).length === 0) {
         friendsListEl.innerHTML = `<span class="friend-chip">Нет друзей</span>`;
@@ -5510,20 +5558,8 @@ async function openFriendPage(friend) {
             .join("");
     }
 
-    const grid = document.querySelector("#friendAchievementsGrid");
-    grid.innerHTML = ACHIEVEMENTS.map(a => {
-        const unlocked = achievements.includes(a.id);
-        return `
-            <div class="achievement ${unlocked ? "unlocked" : "locked"}">
-                <span class="ach-icon">${a.icon}</span>
-                <b>${a.name}</b>
-                <small>${a.desc}</small>
-            </div>`;
-    }).join("");
-
     const giftBtn = document.querySelector("#friendGiftBtn");
     const giftInput = document.querySelector("#friendGiftAmount");
-
     giftBtn.onclick = async () => {
         const amount = parseInt(giftInput.value);
         if (!amount || amount < 1) {
@@ -5533,7 +5569,55 @@ async function openFriendPage(friend) {
         await giveStarsToFriend(friend.email, amount);
     };
 
+    document.querySelectorAll("[data-friend-tab]").forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll("[data-friend-tab]").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            document.querySelectorAll("[data-friend-content]").forEach(c => c.classList.remove("active"));
+            const target = document.querySelector(`[data-friend-content="${btn.dataset.friendTab}"]`);
+            if (target) target.classList.add("active");
+        };
+    });
+
     switchTab("friend");
+}
+
+function renderFriendLevelsRoad(currentLevel, isPremium) {
+    const road = document.querySelector("#friendLevelsRoad");
+    if (!road) return;
+
+    let startLevel = Math.max(1, currentLevel - 4);
+    let endLevel = Math.min(MAX_LEVEL, startLevel + 9);
+    if (endLevel === MAX_LEVEL) startLevel = Math.max(1, endLevel - 9);
+
+    let html = "";
+    if (startLevel > 1) {
+        html += `<div class="chef-level-item">
+            <div class="chef-level-item-icon">…</div>
+            <div class="chef-level-item-title">Ур. ${startLevel - 1}</div>
+        </div>`;
+    }
+    for (let i = startLevel; i <= endLevel; i++) {
+        let cls = "chef-level-item";
+        if (i < currentLevel) cls += " passed";
+        else if (i === currentLevel) cls += " current";
+
+        let title = LEVEL_TITLES[i] || `Ур. ${i}`;
+        let icon = i < currentLevel ? "✓" : (i === currentLevel ? "🔥" : "🔒");
+        if (isPremium && i > currentLevel) icon = "👑";
+
+        html += `<div class="${cls}">
+            <div class="chef-level-item-icon">${icon}</div>
+            <div class="chef-level-item-title">${title}</div>
+        </div>`;
+    }
+    if (endLevel < MAX_LEVEL) {
+        html += `<div class="chef-level-item">
+            <div class="chef-level-item-icon">…</div>
+            <div class="chef-level-item-title">Ур. ${endLevel + 1}</div>
+        </div>`;
+    }
+    road.innerHTML = html;
 }
 
 document.querySelector("#friendBackBtn")?.addEventListener("click", async () => {
