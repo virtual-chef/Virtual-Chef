@@ -3785,6 +3785,7 @@ function renderProfile() {
 
     updateLevelDisplay();
     renderLevelsRoad();
+    applyActiveTitle();
 }
 
 const loginForm = document.querySelector("#loginForm");
@@ -4388,6 +4389,9 @@ async function initAuthListener() {
             if (typeof loadAvatarsFromCloud === "function") {
                 await loadAvatarsFromCloud();
             }
+            if (typeof loadTitlesFromCloud === "function") {
+                await loadTitlesFromCloud();
+            }
             await loadAchievementsFromCloud();
             const tempUser = currentUser();
             if (tempUser && isSuperUser(tempUser.email)) {
@@ -4404,6 +4408,7 @@ async function initAuthListener() {
                     saveAchievementsToCloud(tempUser.achievements);
                 }
             }
+            applyActiveTitle();
         } else {
             localStorage.removeItem("vc_user_email");
         }
@@ -4431,9 +4436,136 @@ const SHOP_AVATARS = [
     { id: "zombie", name: "🧟 Зомби", price: 0, emoji: "🧟" }
 ];
 
+/* ================= 🏆 ТИТУЛЫ ================= */
+
+const SHOP_TITLES = [
+    { id: "none", name: "❌ Снять титул", price: 0, text: null, requireLevel: 0 },
+    { id: "novice", name: "🥉 Новичок", price: 0, text: "🥉 Новичок", requireLevel: 10 },
+    { id: "student", name: "🥈 Ученик", price: 0, text: "🥈 Ученик", requireLevel: 25 },
+    { id: "amateur", name: "🥇 Любитель", price: 0, text: "🥇 Любитель", requireLevel: 50 },
+    { id: "chef", name: "👨‍🍳 Шеф-повар", price: 0, text: "👨‍🍳 Шеф-повар", requireLevel: 100 },
+    { id: "master", name: "🔥 Мастер кухни", price: 0, text: "🔥 Мастер кухни", requireLevel: 500 },
+    { id: "virtual", name: "⭐ Виртуальный Шеф", price: 0, text: "⭐ Виртуальный Шеф", requireLevel: 1000 },
+    { id: "boss", name: "👑 Босс на кухне", price: 0, text: "👑 Босс на кухне", requireLevel: 2000 },
+    { id: "legend", name: "🏆 Легенда", price: 0, text: "🏆 Легенда Шефа", requireLevel: 2800 }
+];
+
+let userTitles = {
+    owned: [],
+    active: null
+};
+
+async function loadTitlesFromCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const ref = doc(db, "users", user.email);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+            const data = snap.data();
+            userTitles.owned = data.ownedTitles || [];
+            userTitles.active = data.activeTitle || null;
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки титулов:", e);
+    }
+}
+
+async function saveTitlesToCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        const ref = doc(db, "users", user.email);
+        await setDoc(ref, {
+            ownedTitles: userTitles.owned,
+            activeTitle: userTitles.active
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения титулов:", e);
+    }
+}
+
+function renderTitlesGrid() {
+    const grid = document.querySelector("#shopGrid");
+    if (!grid) return;
+    const user = currentUser();
+    if (!user) return;
+
+    const myLevel = getLevelFromExp(getExp());
+
+    grid.innerHTML = SHOP_TITLES.map(title => {
+        const isOwned = userTitles.owned.includes(title.id);
+        const isActive = userTitles.active === title.id;
+        const isNone = title.id === "none";
+        const levelOk = myLevel >= title.requireLevel;
+
+        let btnText = "Получить";
+        let btnClass = "";
+        let disabled = "";
+
+        if (isNone) {
+            btnText = isActive ? "✓ Активен" : "Снять";
+            btnClass = isActive ? "active-frame" : "";
+            disabled = isActive ? "disabled" : "";
+        } else if (isActive) {
+            btnText = "✓ Активен";
+            btnClass = "active-frame";
+            disabled = "disabled";
+        } else if (isOwned) {
+            btnText = "Применить";
+            btnClass = "owned";
+        } else if (!levelOk) {
+            btnText = `🔒 Ур. ${title.requireLevel}+`;
+            disabled = "disabled";
+        }
+
+        const preview = isNone
+            ? `<div class="shop-title-preview empty">🚫</div>`
+            : `<div class="shop-title-preview">${title.text}</div>`;
+
+        return `
+            <div class="shop-card">
+                ${preview}
+                <h3>${title.name}</h3>
+                <div class="shop-price" style="font-size:14px;color:#888;">
+                    ${title.requireLevel > 0 ? `🔓 Уровень ${title.requireLevel}+` : "—"}
+                </div>
+                <button
+                    data-title="${title.id}"
+                    data-action="${isActive ? 'none' : (isOwned || isNone) ? 'apply' : 'get'}"
+                    class="${btnClass}"
+                    ${disabled}
+                >${btnText}</button>
+            </div>
+        `;
+    }).join("");
+}
+
+function applyActiveTitle() {
+    const badge = document.querySelector("#profileTitleBadge");
+    const textEl = document.querySelector("#profileTitleText");
+    if (badge && textEl) {
+        const title = SHOP_TITLES.find(t => t.id === userTitles.active);
+        if (title && title.text) {
+            textEl.textContent = title.text;
+            badge.classList.remove("hidden");
+        } else {
+            badge.classList.add("hidden");
+        }
+    }
+}
+
+window.loadTitlesFromCloud = loadTitlesFromCloud;
+window.applyActiveTitle = applyActiveTitle;
+
 const SHOP_SECTIONS = {
     frames: { icon: "🎨", title: "Рамки" },
     avatars: { icon: "😎", title: "Аватарки" },
+    titles: { icon: "🏆", title: "Титулы" },
     badges: { icon: "🏅", title: "Значки" },
     boosts: { icon: "⚡", title: "Бусты" }
 };
@@ -4548,6 +4680,7 @@ function renderShopSection(sectionKey) {
     const content = document.querySelector("#shopContent");
     const grid = document.querySelector("#shopGrid");
     if (!content || !grid) return;
+
     if (sectionKey === "frames") {
         content.classList.add("hidden");
         grid.classList.remove("hidden");
@@ -4556,6 +4689,10 @@ function renderShopSection(sectionKey) {
         content.classList.add("hidden");
         grid.classList.remove("hidden");
         renderAvatarsGrid();
+    } else if (sectionKey === "titles") {
+        content.classList.add("hidden");
+        grid.classList.remove("hidden");
+        renderTitlesGrid();
     } else {
         content.classList.remove("hidden");
         grid.classList.add("hidden");
@@ -4778,6 +4915,58 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             applyActiveFrame();
             showToast(`✨ Применено: ${avatar.name}`);
         }
+    }
+
+    // ===== ТИТУЛЫ =====
+    const titleBtn = e.target.closest("button[data-title]");
+    if (titleBtn && !titleBtn.disabled) {
+        const titleId = titleBtn.dataset.title;
+        const action = titleBtn.dataset.action;
+        const title = SHOP_TITLES.find(t => t.id === titleId);
+        if (!title) return;
+
+        const user = currentUser();
+        if (!user) return;
+
+        const myLevel = getLevelFromExp(getExp());
+        if (title.requireLevel && myLevel < title.requireLevel) {
+            showToast(`❌ Нужен уровень ${title.requireLevel}+`);
+            return;
+        }
+
+        if (titleId === "none") {
+            userTitles.active = null;
+            await saveTitlesToCloud();
+            renderTitlesGrid();
+            applyActiveTitle();
+            showToast("✨ Титул снят");
+            return;
+        }
+
+        if (action === "buy") {
+            const stars = getStars();
+            if (stars < title.price) {
+                showToast("❌ Недостаточно звёзд");
+                return;
+            }
+            const newBalance = stars - title.price;
+            await saveStarsToCloud(newBalance);
+            userTitles.owned.push(titleId);
+            userTitles.active = titleId;
+            await saveTitlesToCloud();
+            updateShopBalance();
+            renderTitlesGrid();
+            applyActiveTitle();
+            showToast(`✅ Куплено: ${title.name}!`);
+            checkAchievements();
+        } else if (action === "apply") {
+            userTitles.active = titleId;
+            await saveTitlesToCloud();
+            renderTitlesGrid();
+            applyActiveTitle();
+            showToast(`🏆 Титул: ${title.name}`);
+        }
+        return;
     }
 });
 
@@ -5471,8 +5660,19 @@ async function openFriendPage(friend) {
         }
     };
 
-    setText("#friendPageTitle", "◉ " + displayName);  // старый ID (в hero) — оставим
-    setText("#friendName", displayName);              // новый ID
+    setText("#friendPageTitle", "◉ " + displayName);
+    setText("#friendName", displayName);
+    const friendTitleBadge = document.querySelector("#friendTitleBadge");
+    const friendTitleText = document.querySelector("#friendTitleText");
+    if (friendTitleBadge && friendTitleText) {
+        const friendTitle = SHOP_TITLES.find(t => t.id === friend.activeTitle);
+        if (friendTitle && friendTitle.text) {
+            friendTitleText.textContent = friendTitle.text;
+            friendTitleBadge.classList.remove("hidden");
+        } else {
+            friendTitleBadge.classList.add("hidden");
+        }
+    }
     setText("#friendNickDisplay", "@" + (friend.nick || "без_ника"));
 
     const avatarEl = document.querySelector("#friendAvatar");
