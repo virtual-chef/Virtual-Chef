@@ -25,15 +25,21 @@
 
             <nav>
                 <button class="nav-link active" data-target="home">
-                    🏠︎ <span>Главная</span>
+                    <img class="nav-icon icon-dark" src="images/nav-home.png" alt="">
+                    <img class="nav-icon icon-light" src="images/nav-home-white.png" alt="">
+                    <span>Главная</span>
                 </button>
 
                 <button class="nav-link" data-target="fridge">
-                    ❄ <span>Холодильник</span>
+                    <img class="nav-icon icon-dark" src="images/nav-fridge.png" alt="">
+                    <img class="nav-icon icon-light" src="images/nav-fridge-white.png" alt="">
+                    <span>Холодильник</span>
                 </button>
 
                 <button class="nav-link" data-target="recipes">
-                    🕮 <span>Рецепты</span>
+                    <img class="nav-icon icon-dark" src="images/nav-recipes.png" alt="">
+                    <img class="nav-icon icon-light" src="images/nav-recipes-white.png" alt="">
+                    <span>Рецепты</span>
                 </button>
             </nav>
 
@@ -48,7 +54,9 @@
                     onclick="toggleViewMode()">🖥</button>
                 <button title="Поиск" id="focusSearch">⌕</button>
                 <button title="Избранное" id="openFavorites">♡</button>
-                <button title="Профиль" id="profileBtn">◉</button>
+                <button title="Профиль" id="profileBtn" class="icon-btn">
+                    <img class="nav-icon" src="images/nav-profile.png" alt="">
+                </button>
             </div>
 
         </div>
