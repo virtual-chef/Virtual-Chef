@@ -99,7 +99,6 @@ body {
 }
 
 .nav-link {
-    padding: 12px 17px;
     border-radius: 24px;
     font-size: 13px;
 }
@@ -4314,4 +4313,78 @@ body.desktop-view .shop-tab {
         max-width: 260px;
         margin: 10px auto 0;
     }
+}
+
+/* ================= НАВИГАЦИОННЫЕ ИКОНКИ ================= */
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 14px;
+}
+
+.nav-icon {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
+    transition: filter .2s;
+}
+
+.nav-link .icon-light {
+    display: none;
+}
+
+.nav-link .icon-dark {
+    display: block;
+}
+
+.nav-link.active .icon-light {
+    display: block;
+}
+
+.nav-link.active .icon-dark {
+    display: none;
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: .2s;
+}
+
+.icon-btn:hover {
+    background: #fff5f5;
+    transform: scale(1.12);
+}
+
+.icon-btn .nav-icon {
+    width: 34px;
+    height: 34px;
+}
+
+@media (max-width: 850px) {
+    .nav-link {
+        padding: 8px 10px;
+    }
+
+    .nav-icon,
+    .icon-btn .nav-icon {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+body.mobile-view .nav-icon,
+body.desktop-view .nav-icon {
+    width: 34px;
+    height: 34px;
 }
