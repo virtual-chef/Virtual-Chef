@@ -6153,3 +6153,150 @@ function toggleViewMode() {
 }
 
 applyViewMode();
+
+/* ================= ПРОМОКОДЫ ================= */
+
+const PROMOCODES = [
+    { code: "WELCOME", stars: 100, limit: null, until: null, note: "Приветственный бонус" },
+    { code: "CHEF2026", stars: 500, limit: null, until: null, note: "Новогодняя акция" },
+    { code: "VIRTUAL", stars: 250, limit: 100, until: null, note: "Запуск Виртуального Шефа" },
+];
+
+async function loadUsedPromosFromCloud() {
+    if (!window.firebaseDB) return [];
+    const user = currentUser();
+    if (!user) return [];
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        return snap.exists() ? (snap.data().usedPromocodes || []) : [];
+    } catch (e) {
+        console.error("Ошибка загрузки промокодов:", e);
+        return [];
+    }
+}
+
+async function saveUsedPromoToCloud(code, stars, note) {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc, arrayUnion } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), {
+            usedPromocodes: arrayUnion({
+                code,
+                stars,
+                note: note || "",
+                date: Date.now()
+            })
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения промокода:", e);
+    }
+}
+
+function findPromo(code) {
+    const clean = code.trim().toUpperCase();
+    return PROMOCODES.find(p => p.code === clean) || null;
+}
+
+async function activatePromo(codeRaw) {
+    const errEl = document.querySelector("#promoError");
+    const input = document.querySelector("#promoInput");
+    const btn = document.querySelector("#promoForm button");
+
+    const setError = (msg, ok = false) => {
+        if (!errEl) return;
+        errEl.textContent = msg;
+        errEl.className = "promo-error " + (ok ? "ok" : "fail");
+    };
+
+    if (!codeRaw || !codeRaw.trim()) {
+        setError("❌ Введи промокод");
+        return;
+    }
+
+    const promo = findPromo(codeRaw);
+    if (!promo) {
+        setError("❌ Такого промокода не существует");
+        return;
+    }
+
+    const user = currentUser();
+    if (!user) {
+        setError("❌ Войди в аккаунт");
+        return;
+    }
+
+    if (promo.until && Date.now() > promo.until) {
+        setError("⏰ Промокод истёк");
+        return;
+    }
+
+    const used = await loadUsedPromosFromCloud();
+    if (used.some(u => u.code === promo.code)) {
+        setError("⚠️ Ты уже активировал этот промокод");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "⏳...";
+
+    try {
+        const newBalance = getStars() + promo.stars;
+        await saveStarsToCloud(newBalance);
+        await saveUsedPromoToCloud(promo.code, promo.stars, promo.note);
+
+        setError(`🎉 +${promo.stars} ⭐ · ${promo.note}`, true);
+        if (input) input.value = "";
+        showToast(`🎟️ Промокод ${promo.code} активирован! +${promo.stars} ⭐`);
+
+        renderPromoHistory();
+        if (typeof renderRewards === "function") renderRewards();
+        checkAchievements();
+    } catch (e) {
+        console.error(e);
+        setError("❌ Ошибка активации, попробуй позже");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "🎁 Активировать";
+    }
+}
+
+async function renderPromoHistory() {
+    const container = document.querySelector("#promoHistory");
+    const countEl = document.querySelector("#promoCount");
+    if (!container) return;
+
+    const used = await loadUsedPromosFromCloud();
+    if (countEl) countEl.textContent = `${used.length} активировано`;
+
+    if (!used.length) {
+        container.innerHTML = `<div class="promo-history-empty">Пока ни один промокод не активирован</div>`;
+        return;
+    }
+
+    const sorted = [...used].sort((a, b) => (b.date || 0) - (a.date || 0));
+    container.innerHTML = `
+        <div class="promo-history-title">История активаций</div>
+        ${sorted.map(u => `
+            <div class="promo-history-item">
+                <span class="code">${u.code}</span>
+                <span class="amount">+${u.stars} ⭐</span>
+            </div>
+        `).join("")}
+    `;
+}
+
+document.querySelector("#promoForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.querySelector("#promoInput");
+    await activatePromo(input.value);
+});
+
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-chef-tab]");
+    if (btn && btn.dataset.chefTab === "promo") {
+        setTimeout(renderPromoHistory, 100);
+    }
+});
