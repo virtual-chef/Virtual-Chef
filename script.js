@@ -3386,14 +3386,6 @@ modal.addEventListener("click", e => {
 
 document.querySelector("#fridgeOpen").addEventListener("click", () => switchTab("fridge"));
 document.querySelector("#allRecipes").addEventListener("click", () => switchTab("recipes"));
-
-document.querySelector("#focusSearch").addEventListener("click", () => {
-    if (!document.querySelector("#page-home").classList.contains("active")) {
-        switchTab("home");
-    }
-    setTimeout(() => document.querySelector("#searchInput").focus(), 150);
-});
-
 document.querySelector("#searchForm").addEventListener("submit", e => {
     e.preventDefault();
     const q = document.querySelector("#searchInput").value.trim().toLowerCase();
