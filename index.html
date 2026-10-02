@@ -371,6 +371,9 @@
                         <button class="chef-sidebar-btn admin-only-btn hidden" data-chef-tab="admin" id="adminTabBtn">
                             <span>👑</span> Админ-панель
                         </button>
+                        <button class="chef-sidebar-btn" data-chef-tab="promo">
+                            <span>🎟️</span> Промокоды
+                        </button>
                         <button class="chef-sidebar-btn" data-chef-tab="settings">
                             <span>⚙️</span> Настройки
                         </button>
@@ -484,6 +487,27 @@
                                 <p class="muted">Здесь будут настройки профиля (скоро)</p>
                             </div>
                             <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
+                        </div>
+
+                        <div class="chef-tab-content" data-chef-content="promo">
+                            <div class="chef-section">
+                                <div class="chef-section-head">
+                                    <h2>🎟️ Промокоды</h2>
+                                    <span class="chef-section-count" id="promoCount">0 активировано</span>
+                                </div>
+                                <p class="muted">Введи промокод и получи звёзды на баланс. Каждый код можно активировать
+                                    только один раз.</p>
+
+                                <form id="promoForm" class="promo-form">
+                                    <input type="text" id="promoInput" placeholder="ВВЕДИ ПРОМОКОД" autocomplete="off"
+                                        spellcheck="false">
+                                    <button type="submit">🎁 Активировать</button>
+                                </form>
+
+                                <p class="promo-error" id="promoError"></p>
+
+                                <div id="promoHistory" class="promo-history"></div>
+                            </div>
                         </div>
 
                     </div>
