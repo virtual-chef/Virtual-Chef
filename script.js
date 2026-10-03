@@ -6648,3 +6648,208 @@ document.addEventListener("click", (e) => {
         setTimeout(renderAdminPromoList, 100);
     }
 });
+
+/* ================= КОЛЕСО ФОРТУНЫ ================= */
+
+const WHEEL_PRIZES = [
+    { id: "p1", stars: 100, label: "100 ⭐", chance: 25, emoji: "🥉", guaranteeAfter: 3 },
+    { id: "p2", stars: 250, label: "250 ⭐", chance: 20, emoji: "🥈", guaranteeAfter: 4 },
+    { id: "p3", stars: 500, label: "500 ⭐", chance: 18, emoji: "🥇", guaranteeAfter: 5 },
+    { id: "p4", stars: 1000, label: "1000 ⭐", chance: 15, emoji: "💎", guaranteeAfter: 7 },
+    { id: "p5", stars: 2000, label: "2000 ⭐", chance: 10, emoji: "🔥", guaranteeAfter: 10 },
+    { id: "p6", stars: 3500, label: "3500 ⭐", chance: 6, emoji: "⭐", guaranteeAfter: 15 },
+    { id: "p7", stars: 5000, label: "5000 ⭐", chance: 3, emoji: "👑", guaranteeAfter: 20 },
+    { id: "p8", stars: 7500, label: "7500 ⭐", chance: 2, emoji: "💫", guaranteeAfter: 25 },
+    { id: "p9", stars: 10000, label: "10000 ⭐", chance: 1, emoji: "🏆", guaranteeAfter: 50 },
+];
+
+const WHEEL_SPIN_COST = 1000;
+
+let wheelRotation = 0;
+let wheelSpinning = false;
+
+function getWheelData() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return { spins: 0, totalSpins: 0, spinsSinceLast: {} };
+    return {
+        spins: parseInt(localStorage.getItem("vc_wheel_spins_" + email) || "0"),
+        totalSpins: parseInt(localStorage.getItem("vc_wheel_total_" + email) || "0"),
+        spinsSinceLast: JSON.parse(localStorage.getItem("vc_wheel_since_" + email) || "{}")
+    };
+}
+
+function saveWheelData(data) {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    localStorage.setItem("vc_wheel_spins_" + email, String(data.spins));
+    localStorage.setItem("vc_wheel_total_" + email, String(data.totalSpins));
+    localStorage.setItem("vc_wheel_since_" + email, JSON.stringify(data.spinsSinceLast || {}));
+}
+
+async function saveWheelDataToCloud(data) {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), {
+            wheelSpins: data.spins,
+            wheelTotalSpins: data.totalSpins,
+            wheelSpinsSinceLast: data.spinsSinceLast || {}
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения колеса:", e);
+    }
+}
+
+function pickWheelPrize() {
+    const data = getWheelData();
+    const sinceLast = data.spinsSinceLast || {};
+
+    for (const p of WHEEL_PRIZES) {
+        if ((sinceLast[p.id] || 0) >= p.guaranteeAfter) {
+            return { prize: p, guarantee: true };
+        }
+    }
+
+    const totalChance = WHEEL_PRIZES.reduce((s, p) => s + p.chance, 0);
+    let r = Math.random() * totalChance;
+    for (const p of WHEEL_PRIZES) {
+        r -= p.chance;
+        if (r <= 0) return { prize: p, guarantee: false };
+    }
+    return { prize: WHEEL_PRIZES[0], guarantee: false };
+}
+
+function getPrizeIndex(prize) {
+    return WHEEL_PRIZES.findIndex(p => p.id === prize.id);
+}
+
+function renderWheel() {
+    const wheelEl = document.querySelector("#wheel");
+    if (wheelEl) {
+        wheelEl.querySelectorAll(".wheel-label").forEach(el => el.remove());
+
+        const total = WHEEL_PRIZES.length;
+        const sectorAngle = 360 / total;
+
+        WHEEL_PRIZES.forEach((p, i) => {
+            const label = document.createElement("div");
+            label.className = "wheel-label";
+            label.textContent = `${p.emoji} ${p.stars}`;
+
+            const angle = i * sectorAngle + sectorAngle / 2;
+
+            const rad = (angle - 90) * Math.PI / 180;
+
+            const radius = 95;
+
+            const x = Math.cos(rad) * radius;
+            const y = Math.sin(rad) * radius;
+
+            label.style.left = `calc(50% + ${x}px)`;
+            label.style.top = `calc(50% + ${y}px)`;
+            label.style.transform = `translate(-50%, -50%)`;
+
+            wheelEl.appendChild(label);
+        });
+    }
+
+    const chancesEl = document.querySelector("#wheelChancesList");
+    if (chancesEl) {
+        const total = WHEEL_PRIZES.reduce((s, p) => s + p.chance, 0);
+        chancesEl.innerHTML = WHEEL_PRIZES.map(p => {
+            const percent = ((p.chance / total) * 100).toFixed(1);
+            return `
+                <div class="wheel-chance-row">
+                    <span class="chance-label">${p.emoji} ${p.label}</span>
+                    <div class="chance-bar">
+                        <div class="chance-fill" style="width: ${percent}%"></div>
+                    </div>
+                    <span class="chance-percent">${percent}%</span>
+                </div>
+            `;
+        }).join("");
+    }
+
+    const balanceEl = document.querySelector("#wheelBalance");
+    if (balanceEl) balanceEl.textContent = getStars();
+}
+
+async function spinWheel() {
+    if (wheelSpinning) return;
+
+    const user = currentUser();
+    if (!user) {
+        showToast("❌ Войди в аккаунт");
+        return;
+    }
+
+    const stars = getStars();
+    if (stars < WHEEL_SPIN_COST) {
+        showToast(`❌ Нужно ${WHEEL_SPIN_COST} ⭐`);
+        return;
+    }
+
+    wheelSpinning = true;
+
+    const data = getWheelData();
+    if (!data.spinsSinceLast) data.spinsSinceLast = {};
+
+    const { prize, guarantee } = pickWheelPrize();
+    const prizeIndex = getPrizeIndex(prize);
+
+    const sectorAngle = 360 / WHEEL_PRIZES.length;
+    const targetAngle = 360 - (prizeIndex * sectorAngle + sectorAngle / 2);
+    const fullTurns = 5 * 360;
+    const finalRotation = wheelRotation + fullTurns + (targetAngle - (wheelRotation % 360));
+
+    const wheelEl = document.querySelector("#wheel");
+    if (wheelEl) {
+        wheelEl.style.transform = `rotate(${finalRotation}deg)`;
+    }
+    wheelRotation = finalRotation;
+
+    await saveStarsToCloud(stars - WHEEL_SPIN_COST);
+
+    setTimeout(async () => {
+        const newBalance = getStars() + prize.stars;
+        await saveStarsToCloud(newBalance);
+
+        data.totalSpins++;
+        data.spinsSinceLast = data.spinsSinceLast || {};
+
+        WHEEL_PRIZES.forEach(p => {
+            if (p.id === prize.id) {
+                data.spinsSinceLast[p.id] = 0;
+            } else {
+                data.spinsSinceLast[p.id] = (data.spinsSinceLast[p.id] || 0) + 1;
+            }
+        });
+
+        saveWheelData(data);
+        await saveWheelDataToCloud(data);
+
+        showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}!${guarantee ? " (гарант)" : ""}`);
+
+        wheelSpinning = false;
+        renderWheel();
+        updateStarsBalance();
+        checkAchievements();
+    }, 4200);
+}
+
+document.querySelector("#wheelBtn")?.addEventListener("click", () => {
+    switchTab("wheel");
+    renderWheel();
+});
+
+document.querySelector("#wheelSpinBtn")?.addEventListener("click", spinWheel);
+
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        if (currentUser()) {
+            renderWheel();
+        }
+    }, 1000);
+});
