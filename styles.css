@@ -1781,19 +1781,6 @@ body {
     min-height: 300px;
 }
 
-.shop-empty {
-    background: #f9fafb;
-    border: 2px dashed #d1d5db;
-    border-radius: 16px;
-    padding: 60px 20px;
-    text-align: center;
-}
-
-.shop-empty-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
-}
-
 .shop-empty h2 {
     font-size: 22px;
     color: #374151;
