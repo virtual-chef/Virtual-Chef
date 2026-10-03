@@ -4557,9 +4557,7 @@ window.applyActiveTitle = applyActiveTitle;
 const SHOP_SECTIONS = {
     frames: { icon: "🎨", title: "Рамки" },
     avatars: { icon: "😎", title: "Аватарки" },
-    titles: { icon: "🏆", title: "Титулы" },
-    badges: { icon: "🏅", title: "Значки" },
-    boosts: { icon: "⚡", title: "Бусты" }
+    titles: { icon: "🏆", title: "Титулы" }
 };
 
 document.querySelector("#shopBtn")?.addEventListener("click", () => {
