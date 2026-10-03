@@ -4196,7 +4196,7 @@ body.desktop-view .shop-tab {
 /* ================= 🏆 ТИТУЛЫ ================= */
 
 .chef-title-badge {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 260px;
@@ -4205,11 +4205,7 @@ body.desktop-view .shop-tab {
     background-size: 100% 100%;
     background-repeat: no-repeat;
     background-position: center;
-    margin: 0 0 0 auto;
-    position: relative;
-    pointer-events: none;
-    filter: drop-shadow(0 4px 10px rgba(217, 119, 6, .4));
-    animation: titleFloat 3s ease-in-out infinite;
+    margin-left: auto;
     flex-shrink: 0;
 }
 
