@@ -6156,11 +6156,55 @@ applyViewMode();
 
 /* ================= ПРОМОКОДЫ ================= */
 
-const PROMOCODES = [
-    { code: "WELCOME", stars: 100, limit: null, until: null, note: "Приветственный бонус" },
-    { code: "CHEF2026", stars: 500, limit: null, until: null, note: "Новогодняя акция" },
-    { code: "VIRTUAL", stars: 250, limit: 100, until: null, note: "Запуск Виртуального Шефа" },
-];
+async function loadPromocodesFromCloud() {
+    if (!window.firebaseDB) return [];
+    try {
+        const { db, collection, getDocs } = window.firebaseDB;
+        const snap = await getDocs(collection(db, "promocodes"));
+        const list = [];
+        snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+        return list;
+    } catch (e) {
+        console.error("Ошибка загрузки промокодов:", e);
+        return [];
+    }
+}
+
+async function findPromoInCloud(code) {
+    if (!window.firebaseDB) return null;
+    const clean = code.trim().toUpperCase();
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "promocodes", clean));
+        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+    } catch (e) {
+        console.error("Ошибка поиска промокода:", e);
+        return null;
+    }
+}
+
+function parsePromoReward(raw) {
+    const result = { stars: 0, exp: 0, spins: 0 };
+    if (!raw) return result;
+
+    const starMatch = raw.match(/\$(\d+)/);
+    const expMatch = raw.match(/&(\d+)/);
+    const spinMatch = raw.match(/#(\d+)/);
+
+    if (starMatch) result.stars = parseInt(starMatch[1]) || 0;
+    if (expMatch) result.exp = parseInt(expMatch[1]) || 0;
+    if (spinMatch) result.spins = parseInt(spinMatch[1]) || 0;
+
+    return result;
+}
+
+function formatPromoRewards(promo) {
+    const parts = [];
+    if (promo.stars > 0) parts.push(`+${promo.stars} ⭐`);
+    if (promo.exp > 0) parts.push(`+${promo.exp} exp`);
+    if (promo.spins > 0) parts.push(`+${promo.spins} 🎰`);
+    return parts;
+}
 
 async function loadUsedPromosFromCloud() {
     if (!window.firebaseDB) return [];
@@ -6174,30 +6218,6 @@ async function loadUsedPromosFromCloud() {
         console.error("Ошибка загрузки промокодов:", e);
         return [];
     }
-}
-
-async function saveUsedPromoToCloud(code, stars, note) {
-    if (!window.firebaseDB) return;
-    const user = currentUser();
-    if (!user) return;
-    try {
-        const { db, doc, setDoc, arrayUnion } = window.firebaseDB;
-        await setDoc(doc(db, "users", user.email), {
-            usedPromocodes: arrayUnion({
-                code,
-                stars,
-                note: note || "",
-                date: Date.now()
-            })
-        }, { merge: true });
-    } catch (e) {
-        console.error("Ошибка сохранения промокода:", e);
-    }
-}
-
-function findPromo(code) {
-    const clean = code.trim().toUpperCase();
-    return PROMOCODES.find(p => p.code === clean) || null;
 }
 
 async function activatePromo(codeRaw) {
@@ -6216,26 +6236,17 @@ async function activatePromo(codeRaw) {
         return;
     }
 
-    const promo = findPromo(codeRaw);
-    if (!promo) {
-        setError("❌ Такого промокода не существует");
-        return;
-    }
-
     const user = currentUser();
     if (!user) {
         setError("❌ Войди в аккаунт");
         return;
     }
 
-    if (promo.until && Date.now() > promo.until) {
-        setError("⏰ Промокод истёк");
-        return;
-    }
+    const code = codeRaw.trim().toUpperCase();
 
-    const used = await loadUsedPromosFromCloud();
-    if (used.some(u => u.code === promo.code)) {
-        setError("⚠️ Ты уже активировал этот промокод");
+    const promo = await findPromoInCloud(code);
+    if (!promo) {
+        setError("❌ Такого промокода не существует");
         return;
     }
 
@@ -6243,16 +6254,43 @@ async function activatePromo(codeRaw) {
     btn.textContent = "⏳...";
 
     try {
-        const newBalance = getStars() + promo.stars;
-        await saveStarsToCloud(newBalance);
-        await saveUsedPromoToCloud(promo.code, promo.stars, promo.note);
+        const { db, doc, setDoc, arrayUnion, updateDoc } = window.firebaseDB;
 
-        setError(`🎉 +${promo.stars} ⭐ · ${promo.note}`, true);
+        if (promo.stars > 0) {
+            const newBalance = getStars() + promo.stars;
+            await saveStarsToCloud(newBalance);
+        }
+
+        if (promo.exp > 0) {
+            await addExp(promo.exp, "за промокод");
+        }
+
+        if (promo.spins > 0) {
+            await addSpinTickets(promo.spins);
+        }
+
+        await setDoc(doc(db, "users", user.email), {
+            usedPromocodes: arrayUnion({
+                code,
+                stars: promo.stars || 0,
+                exp: promo.exp || 0,
+                spins: promo.spins || 0,
+                date: Date.now()
+            })
+        }, { merge: true });
+
+        await updateDoc(doc(db, "promocodes", code), {
+            activatedBy: arrayUnion(user.email)
+        });
+
+        const rewardText = formatPromoRewards(promo).join(" · ");
+        setError(`🎉 ${rewardText}`, true);
         if (input) input.value = "";
-        showToast(`🎟️ Промокод ${promo.code} активирован! +${promo.stars} ⭐`);
+        showToast(`🎟️ Промокод ${code} активирован!`);
 
         renderPromoHistory();
         if (typeof renderRewards === "function") renderRewards();
+        updateLevelDisplay();
         checkAchievements();
     } catch (e) {
         console.error(e);
@@ -6279,13 +6317,309 @@ async function renderPromoHistory() {
     const sorted = [...used].sort((a, b) => (b.date || 0) - (a.date || 0));
     container.innerHTML = `
         <div class="promo-history-title">История активаций</div>
-        ${sorted.map(u => `
-            <div class="promo-history-item">
-                <span class="code">${u.code}</span>
-                <span class="amount">+${u.stars} ⭐</span>
-            </div>
-        `).join("")}
+        ${sorted.map(u => {
+        const rewards = [];
+        if (u.stars > 0) rewards.push(`+${u.stars} ⭐`);
+        if (u.exp > 0) rewards.push(`+${u.exp} exp`);
+        if (u.spins > 0) rewards.push(`+${u.spins} 🎰`);
+        return `
+                <div class="promo-history-item">
+                    <span class="code">${u.code}</span>
+                    <span class="amount">${rewards.join(" · ")}</span>
+                </div>
+            `;
+    }).join("")}
     `;
+}
+
+/* ================= КРУТКИ (для колеса фортуны) ================= */
+
+async function getSpinTickets() {
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return 0;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        return snap.exists() ? (snap.data().spinTickets || 0) : 0;
+    } catch {
+        return 0;
+    }
+}
+
+async function addSpinTickets(amount) {
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return;
+    try {
+        const { db, doc, getDoc, setDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        const current = snap.exists() ? (snap.data().spinTickets || 0) : 0;
+        await setDoc(doc(db, "users", user.email), {
+            spinTickets: current + amount
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка добавления круток:", e);
+    }
+}
+
+/* ================= ПОИСК ЮЗЕРА ПО НИКУ ИЛИ EMAIL ================= */
+
+async function findUserByNickOrEmail(query) {
+    if (!window.firebaseDB || !query) return null;
+    const clean = query.trim().toLowerCase();
+
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+
+        if (clean.includes("@")) {
+            const snap = await getDoc(doc(db, "users", clean));
+            return snap.exists() ? { email: snap.id, ...snap.data() } : null;
+        }
+
+        const nickSnap = await getDoc(doc(db, "nicks", clean));
+        if (!nickSnap.exists()) return null;
+
+        const email = nickSnap.data().email;
+        const userSnap = await getDoc(doc(db, "users", email));
+        return userSnap.exists() ? { email: userSnap.id, ...userSnap.data() } : null;
+    } catch (e) {
+        console.error("Ошибка поиска юзера:", e);
+        return null;
+    }
+}
+
+/* ================= АДМИН-ПАНЕЛЬ ================= */
+
+async function adminGiveStars() {
+    const user = currentUser();
+    if (!user || !isAdminUser(user.email)) return;
+
+    const query = document.querySelector("#adminTargetUser").value.trim();
+    const amount = parseInt(document.querySelector("#adminAmount").value);
+
+    if (!query || !amount || amount < 1) {
+        showToast("❌ Заполни оба поля");
+        return;
+    }
+
+    const target = await findUserByNickOrEmail(query);
+    if (!target) {
+        showToast("❌ Пользователь не найден");
+        return;
+    }
+
+    if (target.email === user.email) {
+        const newTotal = getStars() + amount;
+        await saveStarsToCloud(newTotal);
+        showToast(`👑 +${amount} ⭐ начислено вам!`);
+    } else {
+        const { db, doc, setDoc } = window.firebaseDB;
+        const current = target.stars || 0;
+        await setDoc(doc(db, "users", target.email), { stars: current + amount }, { merge: true });
+        showToast(`✅ +${amount} ⭐ → ${target.name || target.email}`);
+    }
+
+    document.querySelector("#adminTargetUser").value = "";
+    document.querySelector("#adminAmount").value = "";
+}
+
+async function adminTakeStars() {
+    const user = currentUser();
+    if (!user || !isAdminUser(user.email)) return;
+
+    const query = document.querySelector("#adminTakeUser").value.trim();
+    const amount = parseInt(document.querySelector("#adminTakeAmount").value);
+
+    if (!query || !amount || amount < 1) {
+        showToast("❌ Заполни оба поля");
+        return;
+    }
+
+    const target = await findUserByNickOrEmail(query);
+    if (!target) {
+        showToast("❌ Пользователь не найден");
+        return;
+    }
+
+    if (target.email === user.email) {
+        const newTotal = Math.max(0, getStars() - amount);
+        await saveStarsToCloud(newTotal);
+        showToast(`💀 -${amount} ⭐ списано`);
+    } else {
+        const { db, doc, setDoc } = window.firebaseDB;
+        const current = target.stars || 0;
+        await setDoc(doc(db, "users", target.email), { stars: Math.max(0, current - amount) }, { merge: true });
+        showToast(`💀 -${amount} ⭐ → ${target.name || target.email}`);
+    }
+
+    document.querySelector("#adminTakeUser").value = "";
+    document.querySelector("#adminTakeAmount").value = "";
+}
+
+async function adminGiveExp() {
+    const user = currentUser();
+    if (!user || !isAdminUser(user.email)) return;
+
+    const query = document.querySelector("#adminGiveExpUser").value.trim();
+    const amount = parseInt(document.querySelector("#adminGiveExpAmount").value);
+
+    if (!query || !amount || amount < 1) {
+        showToast("❌ Заполни оба поля");
+        return;
+    }
+
+    const target = await findUserByNickOrEmail(query);
+    if (!target) {
+        showToast("❌ Пользователь не найден");
+        return;
+    }
+
+    const { db, doc, setDoc } = window.firebaseDB;
+    const current = target.exp || 0;
+    await setDoc(doc(db, "users", target.email), { exp: current + amount }, { merge: true });
+
+    showToast(`⚡ +${amount} exp → ${target.name || target.email}`);
+
+    document.querySelector("#adminGiveExpUser").value = "";
+    document.querySelector("#adminGiveExpAmount").value = "";
+
+    if (target.email === user.email) {
+        await loadExpFromCloud();
+        updateLevelDisplay();
+    }
+}
+
+async function adminTakeExp() {
+    const user = currentUser();
+    if (!user || !isAdminUser(user.email)) return;
+
+    const query = document.querySelector("#adminTakeExpUser").value.trim();
+    const amount = parseInt(document.querySelector("#adminTakeExpAmount").value);
+
+    if (!query || !amount || amount < 1) {
+        showToast("❌ Заполни оба поля");
+        return;
+    }
+
+    const target = await findUserByNickOrEmail(query);
+    if (!target) {
+        showToast("❌ Пользователь не найден");
+        return;
+    }
+
+    const { db, doc, setDoc } = window.firebaseDB;
+    const current = target.exp || 0;
+    const newExp = Math.max(0, current - amount);
+    await setDoc(doc(db, "users", target.email), { exp: newExp }, { merge: true });
+
+    showToast(`💀 -${amount} exp → ${target.name || target.email}`);
+
+    document.querySelector("#adminTakeExpUser").value = "";
+    document.querySelector("#adminTakeExpAmount").value = "";
+
+    if (target.email === user.email) {
+        await loadExpFromCloud();
+        updateLevelDisplay();
+    }
+}
+
+/* ================= ГЕНЕРАТОР ПРОМОКОДА ================= */
+
+async function adminCreatePromo() {
+    const user = currentUser();
+    if (!user || !isAdminUser(user.email)) return;
+
+    const codeInput = document.querySelector("#adminPromoCode");
+    const rewardInput = document.querySelector("#adminPromoReward");
+
+    const code = codeInput.value.trim().toUpperCase();
+    const rewardRaw = rewardInput.value.trim();
+
+    if (!code) {
+        showToast("❌ Введи код");
+        return;
+    }
+
+    if (!rewardRaw) {
+        showToast("❌ Введи награду");
+        return;
+    }
+
+    const rewards = parsePromoReward(rewardRaw);
+    if (!rewards.stars && !rewards.exp && !rewards.spins) {
+        showToast("❌ Награда пустая (нужен $, & или #)");
+        return;
+    }
+
+    try {
+        const { db, doc, setDoc, getDoc } = window.firebaseDB;
+
+        const existing = await getDoc(doc(db, "promocodes", code));
+        if (existing.exists()) {
+            showToast("❌ Такой код уже существует");
+            return;
+        }
+
+        await setDoc(doc(db, "promocodes", code), {
+            code,
+            stars: rewards.stars,
+            exp: rewards.exp,
+            spins: rewards.spins,
+            createdBy: user.email,
+            createdAt: Date.now(),
+            activatedBy: []
+        });
+
+        showToast(`✅ Промокод ${code} создан!`);
+
+        codeInput.value = "";
+        rewardInput.value = "";
+
+        renderAdminPromoList();
+    } catch (e) {
+        console.error(e);
+        showToast("❌ Ошибка создания");
+    }
+}
+
+async function renderAdminPromoList() {
+    const container = document.querySelector("#adminPromoList");
+    if (!container) return;
+
+    const list = await loadPromocodesFromCloud();
+
+    if (!list.length) {
+        container.innerHTML = `<div class="admin-promo-empty">Пока нет созданных промокодов</div>`;
+        return;
+    }
+
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    container.innerHTML = list.map(p => {
+        const rewardsHTML = formatPromoRewards(p).map(r => `<span>${r}</span>`).join("");
+        return `
+            <div class="admin-promo-item">
+                <span class="code">${p.code}</span>
+                <div class="rewards">${rewardsHTML}</div>
+                <button class="del-btn" data-del-promo="${p.code}">🗑 Удалить</button>
+            </div>
+        `;
+    }).join("");
+}
+
+async function deletePromo(code) {
+    const user = currentUser();
+    if (!user || !isAdminUser(user.email)) return;
+    if (!confirm(`Удалить промокод ${code}?`)) return;
+
+    try {
+        const { db, doc, deleteDoc } = window.firebaseDB;
+        await deleteDoc(doc(db, "promocodes", code));
+        showToast(`🗑 ${code} удалён`);
+        renderAdminPromoList();
+    } catch (e) {
+        console.error(e);
+        showToast("❌ Ошибка удаления");
+    }
 }
 
 document.querySelector("#promoForm")?.addEventListener("submit", async (e) => {
@@ -6294,9 +6628,33 @@ document.querySelector("#promoForm")?.addEventListener("submit", async (e) => {
     await activatePromo(input.value);
 });
 
+document.querySelector("#adminGiveStars")?.addEventListener("click", adminGiveStars);
+document.querySelector("#adminTakeStars")?.addEventListener("click", adminTakeStars);
+document.querySelector("#adminGiveExp")?.addEventListener("click", adminGiveExp);
+document.querySelector("#adminTakeExp")?.addEventListener("click", adminTakeExp);
+document.querySelector("#adminCreatePromo")?.addEventListener("click", adminCreatePromo);
+document.querySelector("#adminPromoList")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-del-promo]");
+    if (btn) deletePromo(btn.dataset.delPromo);
+});
+
+document.querySelectorAll("[data-quick-exp]").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const input = document.querySelector("#adminGiveExpAmount");
+        if (input) {
+            input.value = btn.dataset.quickExp;
+            input.focus();
+        }
+    });
+});
+
 document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-chef-tab]");
-    if (btn && btn.dataset.chefTab === "promo") {
+    if (!btn) return;
+    if (btn.dataset.chefTab === "promo") {
         setTimeout(renderPromoHistory, 100);
+    }
+    if (btn.dataset.chefTab === "admin") {
+        setTimeout(renderAdminPromoList, 100);
     }
 });
