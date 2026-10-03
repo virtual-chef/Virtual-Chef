@@ -44,10 +44,10 @@
             </nav>
 
             <div class="nav-actions">
-                <div class="stars-balance" title="Ваш баланс звёзд">
+                <button class="stars-balance" title="Колесо фортуны" id="wheelBtn">
                     <span class="stars-icon">⭐</span>
                     <span class="stars-count" id="starsCount">0</span>
-                </div>
+                </button>
                 <button class="calendar-btn" title="Календарь наград" id="calendarBtn">📅</button>
                 <button class="shop-btn" title="Магазин" id="shopBtn">🛒</button>
                 <button class="view-toggle-btn" title="Переключить версию" id="viewToggle"
@@ -723,13 +723,10 @@
                         </div>
                         <div class="chef-hero-info">
                             <h1 class="chef-name" id="friendName">—</h1>
-                            <div class="chef-hero-info">
-                                <h1 class="chef-name" id="friendName">—</h1>
-                                <p class="chef-realname" id="friendNickDisplay">—</p>
-                                <p class="chef-bio">📅 С нами с <span id="friendDate">—</span></p>
-                                <div class="chef-title-badge hidden" id="friendTitleBadge">
-                                    <span id="friendTitleText">—</span>
-                                </div>
+                            <p class="chef-realname" id="friendNickDisplay">—</p>
+                            <p class="chef-bio">📅 С нами с <span id="friendDate">—</span></p>
+                            <div class="chef-title-badge hidden" id="friendTitleBadge">
+                                <span id="friendTitleText">—</span>
                             </div>
                         </div>
 
@@ -862,6 +859,45 @@
                 <button class="cooking-btn cooking-btn-prev" id="cookingPrev" disabled>← Назад</button>
                 <button class="cooking-btn cooking-btn-next" id="cookingNext">Дальше →</button>
                 <button class="cooking-btn cooking-btn-finish hidden" id="cookingFinish">✅ Готово!</button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ================= КОЛЕСО ФОРТУНЫ ================= -->
+    <main id="page-wheel" class="page">
+
+        <section class="page-hero wheel-hero">
+            <div class="container">
+                <h1>🎡 Колесо фортуны</h1>
+                <p>Крути и выигрывай до 10 000 ⭐!</p>
+            </div>
+        </section>
+
+        <section class="container page-body">
+
+            <div class="wheel-balance-wrap">
+                <div class="wheel-balance">
+                    <b id="wheelBalance">0</b>
+                    <small>⭐ Ваш баланс</small>
+                </div>
+            </div>
+
+            <div class="wheel-wrap">
+                <div class="wheel-pointer">▼</div>
+                <div class="wheel" id="wheel">
+                    <div class="wheel-center" id="wheelCenter">🎡</div>
+                </div>
+            </div>
+
+            <div class="wheel-actions">
+                <button class="wheel-spin-btn" id="wheelSpinBtn">🎰 Крутить за 1000 ⭐</button>
+            </div>
+
+            <div class="wheel-chances">
+                <h3>Шансы выпадения</h3>
+                <div id="wheelChancesList"></div>
             </div>
 
         </section>
