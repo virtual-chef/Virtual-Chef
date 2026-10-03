@@ -4332,16 +4332,6 @@ document.querySelector("#adminTakeStars")?.addEventListener("click", async () =>
     amountInput.value = "";
 });
 
-document.querySelectorAll("[data-quick-give]").forEach(btn => {
-    btn.addEventListener("click", () => {
-        const amountInput = document.querySelector("#adminAmount");
-        if (amountInput) {
-            amountInput.value = btn.dataset.quickGive;
-            amountInput.focus();
-        }
-    });
-});
-
 const _origRenderProfile = renderProfile;
 window.renderProfile = function () {
     _origRenderProfile();
@@ -5000,10 +4990,6 @@ function markRecipeCooked(recipeId) {
     return { count: counts[recipeId], isFirstTime: isFirstTime };
 }
 
-function getRecipeReward(isFirstTime) {
-    return 0;
-}
-
 function openCookingMode(recipeId) {
     const recipe = recipes.find(r => r.id === recipeId);
     if (!recipe || !recipe.steps || !recipe.steps.length) {
@@ -5612,8 +5598,7 @@ window.renderProfile = async function () {
     if (user && window.firebaseDB) {
         const data = await getUserData(user.email);
         const friendsCount = data?.friends?.length || 0;
-        const el = document.querySelector("#profileFriendsCount");
-        if (el) el.textContent = friendsCount;
+        localStorage.setItem("vc_friends_count", String(friendsCount));
     }
 };
 
@@ -6635,8 +6620,6 @@ document.querySelector("#promoForm")?.addEventListener("submit", async (e) => {
     await activatePromo(input.value);
 });
 
-document.querySelector("#adminGiveStars")?.addEventListener("click", adminGiveStars);
-document.querySelector("#adminTakeStars")?.addEventListener("click", adminTakeStars);
 document.querySelector("#adminGiveExp")?.addEventListener("click", adminGiveExp);
 document.querySelector("#adminTakeExp")?.addEventListener("click", adminTakeExp);
 document.querySelector("#adminCreatePromo")?.addEventListener("click", adminCreatePromo);
