@@ -4388,3 +4388,258 @@ body.desktop-view .nav-icon {
     width: 34px;
     height: 34px;
 }
+
+/* ================= ПРОМОКОДЫ ================= */
+
+.promo-form {
+    display: flex;
+    gap: 10px;
+    margin: 18px 0 8px;
+}
+
+.promo-form input {
+    flex: 1;
+    border: 2px dashed #df2026;
+    background: #fff5f5;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    color: #df2026;
+    outline: none;
+    transition: .2s;
+    font-family: inherit;
+}
+
+.promo-form input::placeholder {
+    color: #e5a5a5;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.promo-form input:focus {
+    border-color: #b8141a;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(223, 32, 38, .12);
+}
+
+.promo-form button {
+    border: 0;
+    background: linear-gradient(135deg, #df2026, #b8141a);
+    color: #fff;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.promo-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(223, 32, 38, .35);
+}
+
+.promo-form button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.promo-error {
+    min-height: 18px;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0 0 10px;
+    text-align: center;
+    transition: .2s;
+}
+
+.promo-error.ok {
+    color: #15803d;
+}
+
+.promo-error.fail {
+    color: #dc2626;
+}
+
+.promo-history {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.promo-history-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.promo-history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+.promo-history-item .code {
+    font-weight: 800;
+    color: #15803d;
+    letter-spacing: 1px;
+    flex: 1;
+}
+
+.promo-history-item .amount {
+    font-weight: 800;
+    color: #d97706;
+    white-space: nowrap;
+}
+
+.promo-history-empty {
+    color: #bbb;
+    font-size: 13px;
+    text-align: center;
+    padding: 12px;
+    background: #fafafa;
+    border-radius: 10px;
+    border: 1.5px dashed #e5e5e5;
+}
+
+@media (max-width: 520px) {
+    .promo-form {
+        flex-direction: column;
+    }
+
+    .promo-form input {
+        font-size: 14px;
+        padding: 12px 14px;
+    }
+
+    .promo-form button {
+        padding: 12px 18px;
+    }
+}
+
+/* ================= ПРОМОКОДЫ АДМИН ПАНЕЛЬ ================= */
+
+.admin-section-promo {
+    background: #fff7ed;
+    border: 2px dashed #fdba74;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 24px;
+}
+
+.admin-section-promo h3 {
+    color: #c2410c !important;
+}
+
+.admin-section-promo .admin-desc {
+    color: #9a3412 !important;
+    margin-bottom: 14px;
+    font-size: 13px;
+}
+
+.admin-form-promo {
+    grid-template-columns: 1fr 1.5fr 140px !important;
+}
+
+.admin-promo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-promo-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 2px solid #fed7aa;
+    border-radius: 10px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+}
+
+.admin-promo-item .code {
+    font-weight: 900;
+    color: #c2410c;
+    letter-spacing: 1.5px;
+    font-size: 14px;
+    background: #fff7ed;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-family: monospace;
+}
+
+.admin-promo-item .rewards {
+    flex: 1;
+    font-size: 12px;
+    color: #78350f;
+    font-weight: 700;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.admin-promo-item .rewards span {
+    background: #ffedd5;
+    padding: 3px 10px;
+    border-radius: 8px;
+}
+
+.admin-promo-item .del-btn {
+    border: 0;
+    background: #fee2e2;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.admin-promo-item .del-btn:hover {
+    background: #dc2626;
+    color: #fff;
+}
+
+.admin-promo-empty {
+    text-align: center;
+    color: #bbb;
+    font-size: 13px;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 10px;
+    border: 1.5px dashed #e5e5e5;
+}
+
+@media (max-width: 850px) {
+    .admin-form-promo {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .admin-form-promo button {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 520px) {
+    .admin-form-promo {
+        grid-template-columns: 1fr !important;
+    }
+}
