@@ -5087,35 +5087,52 @@ function restoreCookingPage() {
             <button class="cooking-btn cooking-btn-finish hidden" id="cookingFinish">✅ Готово!</button>
         </div>
     `;
-    attachCookingHandlers();
 }
 
-function attachCookingHandlers() {
-    document.querySelector("#cookingPrev")?.addEventListener("click", () => {
+document.addEventListener("click", (e) => {
+
+    if (e.target.closest("#cookingPrev")) {
         if (currentCookingStep > 0) {
             currentCookingStep--;
             renderCookingStep();
         }
-    });
+        return;
+    }
 
-    document.querySelector("#cookingNext")?.addEventListener("click", () => {
+    if (e.target.closest("#cookingNext")) {
         if (currentCookingRecipe && currentCookingStep < currentCookingRecipe.steps.length - 1) {
             currentCookingStep++;
             renderCookingStep();
         }
-    });
+        return;
+    }
 
-    document.querySelector("#cookingDots")?.addEventListener("click", (e) => {
-        const dot = e.target.closest(".cooking-dot");
-        if (!dot) return;
+    const dot = e.target.closest(".cooking-dot");
+    if (dot) {
         currentCookingStep = +dot.dataset.step;
         renderCookingStep();
-    });
-}
+        return;
+    }
 
-attachCookingHandlers();
+    if (e.target.closest("#cookingFinish")) {
+        handleCookingFinish();
+        return;
+    }
 
-document.querySelector("#cookingFinish")?.addEventListener("click", async () => {
+    if (e.target.closest("#backToHome")) {
+        restoreCookingPage();
+        switchTab("home");
+        return;
+    }
+
+    if (e.target.closest("#backToRecipes")) {
+        restoreCookingPage();
+        switchTab("recipes");
+        return;
+    }
+});
+
+async function handleCookingFinish() {
     if (!currentCookingRecipe) return;
     const user = currentUser();
     if (!user) {
@@ -5155,15 +5172,7 @@ document.querySelector("#cookingFinish")?.addEventListener("click", async () => 
             </div>
         </div>
     `;
-    document.querySelector("#backToHome")?.addEventListener("click", () => {
-        restoreCookingPage();
-        switchTab("home");
-    });
-    document.querySelector("#backToRecipes")?.addEventListener("click", () => {
-        restoreCookingPage();
-        switchTab("recipes");
-    });
-});
+}
 
 document.querySelector("#cookingBack")?.addEventListener("click", () => {
     switchTab("home");
