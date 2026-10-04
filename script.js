@@ -5600,6 +5600,9 @@ window.renderProfile = async function () {
         const data = await getUserData(user.email);
         const friendsCount = data?.friends?.length || 0;
         localStorage.setItem("vc_friends_count", String(friendsCount));
+
+        const el = document.querySelector("#profileFriendsCount");
+        if (el) el.textContent = friendsCount;
     }
 };
 
@@ -5638,53 +5641,50 @@ async function openFriendPage(friend) {
 
     const setText = (selector, value) => {
         const el = document.querySelector(selector);
-        if (el) {
-            el.textContent = value;
-        } else {
-            console.warn("⚠️ Не найден элемент:", selector);
-        }
+        if (el) el.textContent = value;
     };
 
     setText("#friendPageTitle", "◉ " + displayName);
     setText("#friendName", displayName);
-    const friendTitleBadge = document.querySelector("#friendTitleBadge");
-    const friendTitleText = document.querySelector("#friendTitleText");
-    if (friendTitleBadge && friendTitleText) {
+    setText("#friendNickDisplay", "@" + (friend.nick || "без_ника"));
+
+    const titleBadge = document.querySelector("#friendTitleBadge");
+    const titleText = document.querySelector("#friendTitleText");
+    if (titleBadge && titleText) {
         const friendTitle = SHOP_TITLES.find(t => t.id === friend.activeTitle);
         if (friendTitle && friendTitle.text) {
-            friendTitleText.textContent = friendTitle.text;
-            friendTitleBadge.classList.remove("hidden");
+            titleText.textContent = friendTitle.text;
+            titleBadge.classList.remove("hidden");
         } else {
-            friendTitleBadge.classList.add("hidden");
+            titleBadge.classList.add("hidden");
         }
     }
-    setText("#friendNickDisplay", "@" + (friend.nick || "без_ника"));
 
     const avatarEl = document.querySelector("#friendAvatar");
     if (avatarEl) {
         const friendLetter = (friend.name || "?")[0].toUpperCase();
         avatarEl.setAttribute("data-letter", friendLetter);
-        avatarEl.innerHTML = friend.activeAvatar
-            ? `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`
-            : `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
         avatarEl.className = "profile-avatar";
+
         if (friend.activeFrame) {
             avatarEl.classList.add("frame-" + friend.activeFrame);
         }
-    } else {
-        console.warn("⚠️ Не найден #friendAvatar");
+
+        if (friend.activeAvatar) {
+            avatarEl.innerHTML = `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`;
+        } else {
+            avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
+        }
     }
 
     const registered = friend.registered || Date.now();
     setText("#friendDate", new Date(registered).toLocaleDateString("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric"
+        day: "2-digit", month: "2-digit", year: "numeric"
     }));
 
     const achievements = friend.achievements || [];
     setText("#friendCooked", friend.stats?.opened || 0);
-    setText("#friendAchv", `${achievements.length}/${ACHIEVEMENTS.length}`);
+    setText("#friendFavs", friend.favorites?.length || 0);
     setText("#friendAchvCount", `${achievements.length}/${ACHIEVEMENTS.length}`);
 
     const friendFriends = friend.friends || [];
@@ -5695,14 +5695,10 @@ async function openFriendPage(friend) {
     const friendProg = getLevelProgress(friendExp);
     const friendPremium = isPremiumLevelUser(friend.email);
 
-    setText("#friendLevelNum",
-        friendPremium ? friendProg.level + " 👑" : friendProg.level
-    );
+    setText("#friendLevelNum", friendPremium ? friendProg.level + " 👑" : friendProg.level);
 
     const lvlBarEl = document.querySelector("#friendLevelBar");
-    if (lvlBarEl) {
-        lvlBarEl.style.width = friendProg.percent + "%";
-    }
+    if (lvlBarEl) lvlBarEl.style.width = friendProg.percent + "%";
 
     setText("#friendLevelExp",
         friendPremium ? "MAX" : `${friendProg.currentInLevel} / ${friendProg.needed}`
@@ -5737,24 +5733,18 @@ async function openFriendPage(friend) {
                     </div>
                 </div>`;
         }).join("");
-    } else {
-        console.warn("⚠️ Не найден #friendAchievementsGrid");
     }
 
     renderFriendLevelsRoad(friendProg.level, friendPremium);
 
     try {
-        const friendsOfFriend = await Promise.all(
-            friendFriends.map(e => getUserData(e))
-        );
-        const friendsListEl = document.querySelector("#friendFriendsList");
-        if (friendsListEl) {
+        const friendsOfFriend = await Promise.all(friendFriends.map(e => getUserData(e)));
+        const listEl = document.querySelector("#friendFriendsList");
+        if (listEl) {
             const valid = friendsOfFriend.filter(f => f);
-            friendsListEl.innerHTML = valid.length === 0
+            listEl.innerHTML = valid.length === 0
                 ? `<span class="friend-chip">Нет друзей</span>`
-                : valid.map(f =>
-                    `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`
-                ).join("");
+                : valid.map(f => `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`).join("");
         }
     } catch (e) {
         console.error("Ошибка загрузки друзей друга:", e);
@@ -5785,6 +5775,7 @@ async function openFriendPage(friend) {
 
     switchTab("friend");
 }
+
 function renderFriendLevelsRoad(currentLevel, isPremium) {
     const road = document.querySelector("#friendLevelsRoad");
     if (!road) return;
@@ -5824,10 +5815,22 @@ function renderFriendLevelsRoad(currentLevel, isPremium) {
 }
 
 document.querySelector("#friendBackBtn")?.addEventListener("click", async () => {
-    switchTab("friends");
-    await renderFriends();
-});
+    switchTab("profile");
 
+    setTimeout(async () => {
+        document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
+        const friendsTab = document.querySelector('[data-chef-tab="friends"]');
+        if (friendsTab) friendsTab.classList.add("active");
+
+        document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
+        const friendsContent = document.querySelector('[data-chef-content="friends"]');
+        if (friendsContent) friendsContent.classList.add("active");
+
+        await renderRequests();
+        await renderFriends();
+        await updateFriendsBadge();
+    }, 50);
+});
 const LEVEL_TITLES = {
     10: "Новичок",
     25: "Ученик",
