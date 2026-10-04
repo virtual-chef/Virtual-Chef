@@ -4241,98 +4241,6 @@ function updateAdminPanel() {
     btn.classList.remove("hidden");
 }
 
-document.querySelector("#adminGiveStars")?.addEventListener("click", async () => {
-    const user = currentUser();
-    if (!user || !isAdminUser(user.email)) return;
-
-    const emailInput = document.querySelector("#adminEmail");
-    const amountInput = document.querySelector("#adminAmount");
-
-    const email = emailInput.value.trim().toLowerCase();
-    const amount = parseInt(amountInput.value);
-
-    if (!email || !email.includes("@") || email.length < 5) {
-        showToast("❌ Введите корректный email");
-        return;
-    }
-    if (!amount || amount < 1) {
-        showToast("❌ Введите количество (от 1)");
-        return;
-    }
-
-    if (user.email.toLowerCase() === email) {
-        const newTotal = getStars() + amount;
-        await saveStarsToCloud(newTotal);
-        if (typeof renderRewards === "function") renderRewards();
-        showToast(`👑 +${amount} ⭐ начислено вам!`);
-    } else {
-        if (window.firebaseDB) {
-            try {
-                const { db, doc, getDoc, setDoc } = window.firebaseDB;
-                const ref = doc(db, "users", email);
-                const snap = await getDoc(ref);
-                if (!snap.exists()) {
-                    showToast("❌ Пользователь не найден");
-                    return;
-                }
-                const current = snap.data().stars || 0;
-                await setDoc(ref, { stars: current + amount }, { merge: true });
-                showToast(`✅ +${amount} ⭐ начислено`);
-            } catch (e) {
-                showToast("❌ Ошибка: " + e.message);
-            }
-        }
-    }
-    emailInput.value = "";
-    amountInput.value = "";
-});
-
-document.querySelector("#adminTakeStars")?.addEventListener("click", async () => {
-    const user = currentUser();
-    if (!user || !isAdminUser(user.email)) return;
-
-    const emailInput = document.querySelector("#adminTakeEmail");
-    const amountInput = document.querySelector("#adminTakeAmount");
-
-    const email = emailInput.value.trim().toLowerCase();
-    const amount = parseInt(amountInput.value);
-
-    if (!email || !email.includes("@") || email.length < 5) {
-        showToast("❌ Введите корректный email");
-        return;
-    }
-    if (!amount || amount < 1) {
-        showToast("❌ Введите количество (от 1)");
-        return;
-    }
-
-    if (user.email.toLowerCase() === email) {
-        const newTotal = Math.max(0, getStars() - amount);
-        await saveStarsToCloud(newTotal);
-        if (typeof renderRewards === "function") renderRewards();
-        showToast(`💀 -${amount} ⭐ списано`);
-    } else {
-        if (window.firebaseDB) {
-            try {
-                const { db, doc, getDoc, setDoc } = window.firebaseDB;
-                const ref = doc(db, "users", email);
-                const snap = await getDoc(ref);
-                if (!snap.exists()) {
-                    showToast("❌ Пользователь не найден");
-                    return;
-                }
-                const current = snap.data().stars || 0;
-                await setDoc(ref, { stars: Math.max(0, current - amount) }, { merge: true });
-                showToast(`💀 -${amount} ⭐`);
-            } catch (e) {
-                showToast("❌ Ошибка: " + e.message);
-            }
-        }
-    }
-    emailInput.value = "";
-    amountInput.value = "";
-});
-
 const _origRenderProfile = renderProfile;
 window.renderProfile = function () {
     _origRenderProfile();
@@ -6903,3 +6811,6 @@ window.addEventListener("load", () => {
         }
     }, 1000);
 });
+
+document.querySelector("#adminGiveStars")?.addEventListener("click", adminGiveStars);
+document.querySelector("#adminTakeStars")?.addEventListener("click", adminTakeStars);
