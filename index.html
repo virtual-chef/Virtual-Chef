@@ -868,38 +868,67 @@
     <!-- ================= КОЛЕСО ФОРТУНЫ ================= -->
     <main id="page-wheel" class="page">
 
-        <section class="page-hero wheel-hero">
-            <div class="container">
-                <h1>🎡 Колесо фортуны</h1>
-                <p>Крути и выигрывай до 10 000 ⭐!</p>
+        <section class="wheel-page">
+            <div class="container wheel-layout">
+
+                <aside class="wheel-left">
+                    <h3 class="wheel-side-title">
+                        <span class="wheel-side-icon">⭐</span> Ваши звёзды
+                    </h3>
+                    <div class="wheel-balance-card">
+                        <span class="wheel-balance-star">⭐</span>
+                        <span class="wheel-balance-num" id="wheelBalance">0</span>
+                    </div>
+                    <button class="wheel-spin-side-btn" id="wheelSpinBtn">
+                        <span class="wheel-spin-side-icon">⭐</span>
+                        Крутить за 1 000 звёзд
+                    </button>
+                </aside>
+
+                <section class="wheel-center-col">
+                    <h1 class="wheel-title">
+                        <span class="wheel-title-icon">🎁</span>
+                        Колесо фортуны
+                    </h1>
+                    <p class="wheel-subtitle">Крути колесо и выигрывай звёзды!</p>
+
+                    <div class="wheel-stage">
+                        <div class="wheel-handwrite">Удачи! <span>❤</span></div>
+
+                        <div class="wheel-pointer-new">
+                            <div class="wheel-pointer-cap">👨‍🍳</div>
+                            <div class="wheel-pointer-triangle"></div>
+                        </div>
+
+                        <div class="wheel-wrap">
+                            <div class="wheel-lights"></div>
+                            <div class="wheel" id="wheel">
+                                <div class="wheel-labels" id="wheelLabels"></div>
+                            </div>
+                            <div class="wheel-center-btn" id="wheelCenter" role="button" tabindex="0">
+                                <b>КРУТИТЬ</b>
+                                <small>1 000 звёзд</small>
+                                <span class="wheel-center-icon">↻</span>
+                            </div>
+                        </div>
+
+                        <div class="wheel-stand">
+                            <div class="wheel-stand-star">⭐</div>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="wheel-right">
+                    <h3 class="wheel-side-title">
+                        <span class="wheel-side-icon">🎁</span> Шансы на выпадение
+                    </h3>
+                    <div class="wheel-chances-list" id="wheelChancesList"></div>
+                    <div class="wheel-chances-foot">
+                        <span class="wheel-foot-script">Крути колесо и испытывай удачу!</span>
+                    </div>
+                </aside>
+
             </div>
-        </section>
-
-        <section class="container page-body">
-
-            <div class="wheel-balance-wrap">
-                <div class="wheel-balance">
-                    <b id="wheelBalance">0</b>
-                    <small>⭐ Ваш баланс</small>
-                </div>
-            </div>
-
-            <div class="wheel-wrap">
-                <div class="wheel-pointer">▼</div>
-                <div class="wheel" id="wheel">
-                    <div class="wheel-center" id="wheelCenter">🎡</div>
-                </div>
-            </div>
-
-            <div class="wheel-actions">
-                <button class="wheel-spin-btn" id="wheelSpinBtn">🎰 Крутить за 1000 ⭐</button>
-            </div>
-
-            <div class="wheel-chances">
-                <h3>Шансы выпадения</h3>
-                <div id="wheelChancesList"></div>
-            </div>
-
         </section>
 
     </main>
