@@ -704,7 +704,7 @@
     <!-- ================= ПРОФИЛЬ ДРУГА ================= -->
     <main id="page-friend" class="page">
 
-        <section class="page-hero friend-hero">
+        <section class="page-hero profile-hero">
             <div class="container">
                 <button class="friend-back-btn" id="friendBackBtn">← К друзьям</button>
                 <h1 id="friendPageTitle">◉ Профиль</h1>
@@ -714,7 +714,7 @@
 
         <section class="container page-body">
 
-            <div class="chef-profile friend-profile-view">
+            <div class="chef-profile">
 
                 <div class="chef-hero">
                     <div class="chef-hero-inner">
@@ -725,109 +725,117 @@
                             <h1 class="chef-name" id="friendName">—</h1>
                             <p class="chef-realname" id="friendNickDisplay">—</p>
                             <p class="chef-bio">📅 С нами с <span id="friendDate">—</span></p>
-                            <div class="chef-title-badge hidden" id="friendTitleBadge">
-                                <span id="friendTitleText">—</span>
+                        </div>
+                        <div class="chef-title-badge hidden" id="friendTitleBadge">
+                            <span id="friendTitleText">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- СТАТЫ -->
+                <div class="chef-stats">
+                    <div class="chef-stat">
+                        <span class="chef-stat-icon">🍳</span>
+                        <div>
+                            <b id="friendCooked">0</b>
+                            <small>Рецептов</small>
+                        </div>
+                    </div>
+                    <div class="chef-stat">
+                        <span class="chef-stat-icon">❤️</span>
+                        <div>
+                            <b id="friendFavs">0</b>
+                            <small>Понравилось</small>
+                        </div>
+                    </div>
+                    <div class="chef-stat">
+                        <span class="chef-stat-icon">👥</span>
+                        <div>
+                            <b id="friendFriendsCount">0</b>
+                            <small>Друзей</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- УРОВЕНЬ -->
+                <div class="chef-level-block">
+                    <div class="chef-level-badge">
+                        <span class="chef-level-icon">👨‍🍳</span>
+                        <div class="chef-level-text">
+                            <b>Уровень <span id="friendLevelNum">1</span></b>
+                            <small id="friendLevelTitle" style="display:none;">—</small>
+                            <small>Начинающий шеф</small>
+                        </div>
+                    </div>
+                    <div class="chef-level-progress">
+                        <div class="chef-level-bar">
+                            <div class="chef-level-fill" id="friendLevelBar" style="width: 0%"></div>
+                        </div>
+                        <span class="chef-level-exp" id="friendLevelExp">0 / 25</span>
+                    </div>
+                </div>
+
+                <div class="chef-content">
+
+                    <aside class="chef-sidebar">
+                        <button class="chef-sidebar-btn active" data-friend-tab="profile">
+                            <span>👤</span> Профиль
+                        </button>
+                        <button class="chef-sidebar-btn" data-friend-tab="favorites">
+                            <span>❤️</span> Избранное
+                        </button>
+                        <button class="chef-sidebar-btn" data-friend-tab="friends">
+                            <span>👥</span> Друзья
+                        </button>
+                    </aside>
+
+                    <div class="chef-main">
+
+                        <div class="chef-tab-content active" data-friend-content="profile">
+                            <div class="chef-section">
+                                <div class="chef-section-head">
+                                    <h2>🏆 Достижения</h2>
+                                    <span class="chef-section-count" id="friendAchvCount">0/28</span>
+                                </div>
+                                <div class="chef-achievements" id="friendAchievementsGrid"></div>
+                            </div>
+
+                            <div class="chef-section">
+                                <div class="chef-section-head">
+                                    <h2>📈 Уровни</h2>
+                                </div>
+                                <div class="chef-levels-road" id="friendLevelsRoad"></div>
                             </div>
                         </div>
 
-                        <div class="chef-stats">
-                            <div class="chef-stat">
-                                <span class="chef-stat-icon">🍳</span>
-                                <div>
-                                    <b id="friendCooked">0</b>
-                                    <small>Рецептов</small>
-                                </div>
-                            </div>
-                            <div class="chef-stat">
-                                <span class="chef-stat-icon">🏆</span>
-                                <div>
-                                    <b id="friendAchv">0</b>
-                                    <small>Достижений</small>
-                                </div>
-                            </div>
-                            <div class="chef-stat">
-                                <span class="chef-stat-icon">👥</span>
-                                <div>
-                                    <b id="friendFriendsCount">0</b>
-                                    <small>Друзей</small>
-                                </div>
+                        <div class="chef-tab-content" data-friend-content="favorites">
+                            <div class="chef-section">
+                                <h2>❤️ Избранные рецепты</h2>
+                                <p class="muted">Друг пока не делится избранным</p>
                             </div>
                         </div>
 
-                        <div class="chef-level-block">
-                            <div class="chef-level-badge">
-                                <span class="chef-level-icon">👨‍🍳</span>
-                                <div class="chef-level-text">
-                                    <b>Уровень <span id="friendLevelNum">1</span></b>
-                                    <small id="friendLevelTitle" style="display:none;">—</small>
-                                    <small>Начинающий шеф</small>
-                                </div>
-                            </div>
-                            <div class="chef-level-progress">
-                                <div class="chef-level-bar">
-                                    <div class="chef-level-fill" id="friendLevelBar" style="width: 0%"></div>
-                                </div>
-                                <span class="chef-level-exp" id="friendLevelExp">0 / 25</span>
-                            </div>
-                        </div>
-
-                        <div class="chef-content">
-                            <aside class="chef-sidebar">
-                                <button class="chef-sidebar-btn active" data-friend-tab="profile">
-                                    <span>👤</span> Профиль
-                                </button>
-                                <button class="chef-sidebar-btn" data-friend-tab="favorites">
-                                    <span>❤️</span> Избранное
-                                </button>
-                                <button class="chef-sidebar-btn" data-friend-tab="friends">
-                                    <span>👥</span> Друзья
-                                </button>
-                            </aside>
-
-                            <div class="chef-main">
-                                <div class="chef-tab-content active" data-friend-content="profile">
-                                    <div class="chef-section">
-                                        <div class="chef-section-head">
-                                            <h2>🏆 Достижения</h2>
-                                            <span class="chef-section-count" id="friendAchvCount">0/28</span>
-                                        </div>
-                                        <div class="chef-achievements" id="friendAchievementsGrid"></div>
-                                    </div>
-
-                                    <div class="chef-section">
-                                        <div class="chef-section-head">
-                                            <h2>📈 Уровни</h2>
-                                        </div>
-                                        <div class="chef-levels-road" id="friendLevelsRoad"></div>
-                                    </div>
-                                </div>
-
-                                <div class="chef-tab-content" data-friend-content="favorites">
-                                    <div class="chef-section">
-                                        <h2>❤️ Избранные рецепты</h2>
-                                        <p class="muted">Друг пока не делится избранным</p>
-                                    </div>
-                                </div>
-
-                                <div class="chef-tab-content" data-friend-content="friends">
-                                    <div class="chef-section">
-                                        <h2>🤝 Друзья <span id="friendFriendsCountTab">(0)</span></h2>
-                                        <div class="friend-chips" id="friendFriendsList"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="chef-section" style="margin-top:20px;">
-                            <h2>⭐ Подарить звёзды</h2>
-                            <p class="muted">Порадуй друга звёздами</p>
-                            <div class="gift-form-friend">
-                                <input type="number" id="friendGiftAmount" placeholder="Сколько ⭐" min="1" value="100">
-                                <button id="friendGiftBtn">🎁 Подарить</button>
+                        <div class="chef-tab-content" data-friend-content="friends">
+                            <div class="chef-section">
+                                <h2>🤝 Друзья <span id="friendFriendsCountTab">(0)</span></h2>
+                                <div class="friend-chips" id="friendFriendsList"></div>
                             </div>
                         </div>
 
                     </div>
+                </div>
+
+                <!-- ПОДАРОК -->
+                <div class="chef-section" style="margin-top:20px;">
+                    <h2>⭐ Подарить звёзды</h2>
+                    <p class="muted">Порадуй друга звёздами</p>
+                    <div class="gift-form-friend">
+                        <input type="number" id="friendGiftAmount" placeholder="Сколько ⭐" min="1" value="100">
+                        <button id="friendGiftBtn">🎁 Подарить</button>
+                    </div>
+                </div>
+
+            </div>
 
         </section>
 
