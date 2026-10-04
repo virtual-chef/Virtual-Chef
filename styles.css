@@ -2832,10 +2832,6 @@ body {
 
 /* ================= ПРОФИЛЬ ДРУГА ================= */
 
-.friend-hero {
-    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-}
-
 .friend-back-btn {
     background: rgba(255, 255, 255, .2);
     color: #fff;
