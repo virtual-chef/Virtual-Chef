@@ -4222,9 +4222,7 @@ function updateAdminPanel() {
     const btn = document.querySelector("#adminTabBtn");
     if (!btn) return;
 
-    if (user && isAdminUser(user.email)) {
-        btn.classList.remove("hidden");
-    } else {
+    if (!user || !isAdminUser(user.email)) {
         btn.classList.add("hidden");
 
         const adminTab = document.querySelector('[data-chef-content="admin"]');
@@ -4237,7 +4235,10 @@ function updateAdminPanel() {
             const profileBtn = document.querySelector('[data-chef-tab="profile"]');
             if (profileBtn) profileBtn.classList.add("active");
         }
+        return;
     }
+
+    btn.classList.remove("hidden");
 }
 
 document.querySelector("#adminGiveStars")?.addEventListener("click", async () => {
@@ -6652,15 +6653,16 @@ document.addEventListener("click", (e) => {
 /* ================= КОЛЕСО ФОРТУНЫ ================= */
 
 const WHEEL_PRIZES = [
-    { id: "p1", stars: 100, label: "100 ⭐", chance: 25, emoji: "🥉", guaranteeAfter: 3 },
-    { id: "p2", stars: 250, label: "250 ⭐", chance: 20, emoji: "🥈", guaranteeAfter: 4 },
-    { id: "p3", stars: 500, label: "500 ⭐", chance: 18, emoji: "🥇", guaranteeAfter: 5 },
-    { id: "p4", stars: 1000, label: "1000 ⭐", chance: 15, emoji: "💎", guaranteeAfter: 7 },
-    { id: "p5", stars: 2000, label: "2000 ⭐", chance: 10, emoji: "🔥", guaranteeAfter: 10 },
-    { id: "p6", stars: 3500, label: "3500 ⭐", chance: 6, emoji: "⭐", guaranteeAfter: 15 },
-    { id: "p7", stars: 5000, label: "5000 ⭐", chance: 3, emoji: "👑", guaranteeAfter: 20 },
-    { id: "p8", stars: 7500, label: "7500 ⭐", chance: 2, emoji: "💫", guaranteeAfter: 25 },
-    { id: "p9", stars: 10000, label: "10000 ⭐", chance: 1, emoji: "🏆", guaranteeAfter: 50 },
+    { id: "p1", stars: 100, label: "100 ⭐", chance: 35, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p2", stars: 500, label: "500 ⭐", chance: 25, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p3", stars: 1000, label: "1000 ⭐", chance: 15, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p4", stars: 5000, label: "5000 ⭐", chance: 10, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p5", stars: 10000, label: "10000 ⭐", chance: 6, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p6", stars: 25000, label: "25000 ⭐", chance: 4, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p7", stars: 50000, label: "50000 ⭐", chance: 3, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p8", stars: 100000, label: "100000 ⭐", chance: 1, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p9", stars: 500000, label: "Секрет", chance: 1, emoji: "🎁", guaranteeAfter: 9999 },
+    { id: "p10", stars: 0, label: "Ничего", chance: 0, emoji: "🚫", guaranteeAfter: 9999 },
 ];
 
 const WHEEL_SPIN_COST = 1000;
@@ -6726,24 +6728,37 @@ function getPrizeIndex(prize) {
 }
 
 function renderWheel() {
+    const labelsEl = document.querySelector("#wheelLabels");
     const wheelEl = document.querySelector("#wheel");
-    if (wheelEl) {
-        wheelEl.querySelectorAll(".wheel-label").forEach(el => el.remove());
+
+    if (wheelEl && labelsEl) {
+        labelsEl.innerHTML = "";
 
         const total = WHEEL_PRIZES.length;
         const sectorAngle = 360 / total;
 
+        wheelEl.style.background = buildConicGradient();
+
         WHEEL_PRIZES.forEach((p, i) => {
             const label = document.createElement("div");
-            label.className = "wheel-label";
-            label.textContent = `${p.emoji} ${p.stars}`;
+            label.className = "wheel-label-new";
+
+            const isSecret = p.id === "p9";
+            const isEmpty = p.id === "p10";
+
+            let innerHTML;
+            if (isSecret) {
+                innerHTML = `<span class="wl-emoji">🎁</span><span class="wl-num">Секретный</span><span class="wl-sub">приз</span>`;
+            } else if (isEmpty) {
+                innerHTML = `<span class="wl-emoji">🚫</span><span class="wl-num">Ничего</span><span class="wl-sub">0 звёзд</span>`;
+            } else {
+                innerHTML = `<span class="wl-emoji">⭐</span><span class="wl-num">${p.stars.toLocaleString("ru-RU")}</span><span class="wl-sub">звёзд</span>`;
+            }
+            label.innerHTML = innerHTML;
 
             const angle = i * sectorAngle + sectorAngle / 2;
-
             const rad = (angle - 90) * Math.PI / 180;
-
-            const radius = 95;
-
+            const radius = 130;
             const x = Math.cos(rad) * radius;
             const y = Math.sin(rad) * radius;
 
@@ -6751,29 +6766,56 @@ function renderWheel() {
             label.style.top = `calc(50% + ${y}px)`;
             label.style.transform = `translate(-50%, -50%)`;
 
-            wheelEl.appendChild(label);
+            if (i % 2 === 0) {
+                label.classList.add("on-red");
+            } else {
+                label.classList.add("on-white");
+            }
+
+            labelsEl.appendChild(label);
         });
     }
 
     const chancesEl = document.querySelector("#wheelChancesList");
     if (chancesEl) {
-        const total = WHEEL_PRIZES.reduce((s, p) => s + p.chance, 0);
-        chancesEl.innerHTML = WHEEL_PRIZES.map(p => {
-            const percent = ((p.chance / total) * 100).toFixed(1);
+        chancesEl.innerHTML = WHEEL_PRIZES.map((p, i) => {
+            const isSecret = p.id === "p9";
+            const isEmpty = p.id === "p10";
+            const starsText = isSecret
+                ? "Секретный приз"
+                : isEmpty
+                    ? "Ничего"
+                    : `${p.stars.toLocaleString("ru-RU")} звёзд`;
             return `
                 <div class="wheel-chance-row">
-                    <span class="chance-label">${p.emoji} ${p.label}</span>
-                    <div class="chance-bar">
-                        <div class="chance-fill" style="width: ${percent}%"></div>
-                    </div>
-                    <span class="chance-percent">${percent}%</span>
+                    <span class="wcr-emoji">${isSecret ? "🎁" : isEmpty ? "🚫" : "⭐"}</span>
+                    <span class="wcr-label">${starsText}</span>
+                    <span class="wcr-percent">${p.chance}%</span>
                 </div>
             `;
         }).join("");
     }
 
     const balanceEl = document.querySelector("#wheelBalance");
-    if (balanceEl) balanceEl.textContent = getStars();
+    if (balanceEl) balanceEl.textContent = getStars().toLocaleString("ru-RU");
+}
+
+function buildConicGradient() {
+    const total = WHEEL_PRIZES.length;
+    const angle = 360 / total;
+    const gap = 5;
+
+    const stops = [];
+    for (let i = 0; i < total; i++) {
+        const color = i % 2 === 0 ? "#e11d2a" : "#ffffff";
+        const start = i * angle + gap / 2;
+        const end = (i + 1) * angle - gap / 2;
+
+        stops.push(`#ffffff ${i * angle}deg ${start}deg`);
+        stops.push(`${color} ${start}deg ${end}deg`);
+        stops.push(`#ffffff ${end}deg ${(i + 1) * angle}deg`);
+    }
+    return `conic-gradient(from 0deg, ${stops.join(", ")})`;
 }
 
 async function spinWheel() {
@@ -6830,7 +6872,11 @@ async function spinWheel() {
         saveWheelData(data);
         await saveWheelDataToCloud(data);
 
-        showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}!${guarantee ? " (гарант)" : ""}`);
+        if (prize.stars === 0) {
+            showToast(`😢 Выпало: ${prize.emoji} Ничего. Не повезло!`);
+        } else {
+            showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}!${guarantee ? " (гарант)" : ""}`);
+        }
 
         wheelSpinning = false;
         renderWheel();
@@ -6845,6 +6891,7 @@ document.querySelector("#wheelBtn")?.addEventListener("click", () => {
 });
 
 document.querySelector("#wheelSpinBtn")?.addEventListener("click", spinWheel);
+document.querySelector("#wheelCenter")?.addEventListener("click", spinWheel);
 
 window.addEventListener("load", () => {
     setTimeout(() => {
