@@ -887,9 +887,18 @@
                         <span class="wheel-balance-star">⭐</span>
                         <span class="wheel-balance-num" id="wheelBalance">0</span>
                     </div>
+
+                    <div class="wheel-balance-card" id="wheelFreeSpinsCard" style="display:none;">
+                        <span class="wheel-balance-star">🎰</span>
+                        <span class="wheel-balance-num" id="wheelFreeSpins">0</span>
+                        <small
+                            style="display:block;width:100%;text-align:center;color:#888;font-size:11px;margin-top:4px;">Бесплатных
+                            круток</small>
+                    </div>
+
                     <button class="wheel-spin-side-btn" id="wheelSpinBtn">
                         <span class="wheel-spin-side-icon">⭐</span>
-                        Крутить за 1 000 звёзд
+                        <span id="wheelSpinBtnText">Крутить за 1 000 звёзд</span>
                     </button>
                 </aside>
 
@@ -915,7 +924,7 @@
                             </div>
                             <div class="wheel-center-btn" id="wheelCenter" role="button" tabindex="0">
                                 <b>КРУТИТЬ</b>
-                                <small>1 000 звёзд</small>
+                                <small id="wheelCenterSubtext">1 000 звёзд</small>
                                 <span class="wheel-center-icon">↻</span>
                             </div>
                         </div>
