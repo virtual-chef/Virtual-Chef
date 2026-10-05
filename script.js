@@ -6171,6 +6171,9 @@ async function activatePromo(codeRaw) {
 
         if (promo.spins > 0) {
             await addSpinTickets(promo.spins);
+            if (typeof updateWheelFreeSpinsUI === "function") {
+                await updateWheelFreeSpinsUI();
+            }
         }
 
         await setDoc(doc(db, "users", user.email), {
@@ -6252,16 +6255,19 @@ async function getSpinTickets() {
 
 async function addSpinTickets(amount) {
     const user = currentUser();
-    if (!user || !window.firebaseDB) return;
+    if (!user || !window.firebaseDB) return 0;
     try {
         const { db, doc, getDoc, setDoc } = window.firebaseDB;
         const snap = await getDoc(doc(db, "users", user.email));
         const current = snap.exists() ? (snap.data().spinTickets || 0) : 0;
+        const newValue = Math.max(0, current + amount);
         await setDoc(doc(db, "users", user.email), {
-            spinTickets: current + amount
+            spinTickets: newValue
         }, { merge: true });
+        return newValue;
     } catch (e) {
-        console.error("Ошибка добавления круток:", e);
+        console.error("Ошибка изменения круток:", e);
+        return 0;
     }
 }
 
@@ -6564,16 +6570,16 @@ document.addEventListener("click", (e) => {
 /* ================= КОЛЕСО ФОРТУНЫ ================= */
 
 const WHEEL_PRIZES = [
-    { id: "p1", stars: 100, label: "100 ⭐", chance: 35, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p2", stars: 500, label: "500 ⭐", chance: 25, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p3", stars: 1000, label: "1000 ⭐", chance: 15, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p4", stars: 5000, label: "5000 ⭐", chance: 10, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p5", stars: 10000, label: "10000 ⭐", chance: 6, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p6", stars: 25000, label: "25000 ⭐", chance: 4, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p7", stars: 50000, label: "50000 ⭐", chance: 3, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p8", stars: 100000, label: "100000 ⭐", chance: 1, emoji: "⭐", guaranteeAfter: 9999 },
-    { id: "p9", stars: 500000, label: "Секрет", chance: 1, emoji: "🎁", guaranteeAfter: 9999 },
-    { id: "p10", stars: 0, label: "Ничего", chance: 0, emoji: "🚫", guaranteeAfter: 9999 },
+    { id: "p1", stars: 100, label: "100 ⭐", chance: 13.5, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p2", stars: 500, label: "500 ⭐", chance: 9.5, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p3", stars: 1000, label: "1000 ⭐", chance: 5.7, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p4", stars: 5000, label: "5000 ⭐", chance: 3, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p5", stars: 10000, label: "10000 ⭐", chance: 1.9, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p6", stars: 25000, label: "25000 ⭐", chance: 1.1, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p7", stars: 50000, label: "50000 ⭐", chance: 0.4, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p8", stars: 100000, label: "100000 ⭐", chance: 0.2, emoji: "⭐", guaranteeAfter: 9999 },
+    { id: "p9", stars: 500000, label: "Секрет", chance: 0.1, emoji: "🎁", guaranteeAfter: 9999 },
+    { id: "p10", stars: 0, label: "Ничего", chance: 35, emoji: "🚫", guaranteeAfter: 9999 },
 ];
 
 const WHEEL_SPIN_COST = 1000;
@@ -6638,7 +6644,7 @@ function getPrizeIndex(prize) {
     return WHEEL_PRIZES.findIndex(p => p.id === prize.id);
 }
 
-function renderWheel() {
+async function renderWheel() {
     const labelsEl = document.querySelector("#wheelLabels");
     const wheelEl = document.querySelector("#wheel");
 
@@ -6709,6 +6715,68 @@ function renderWheel() {
 
     const balanceEl = document.querySelector("#wheelBalance");
     if (balanceEl) balanceEl.textContent = getStars().toLocaleString("ru-RU");
+
+    await updateWheelFreeSpinsUI();
+}
+
+async function updateWheelFreeSpinsUI() {
+    const user = currentUser();
+    const freeSpins = user ? await getSpinTickets() : 0;
+
+    const card = document.querySelector("#wheelFreeSpinsCard");
+    const numEl = document.querySelector("#wheelFreeSpins");
+    const btnText = document.querySelector("#wheelSpinBtnText");
+    const centerSub = document.querySelector("#wheelCenterSubtext");
+    const sideBtn = document.querySelector("#wheelSpinBtn");
+
+    if (card && numEl) {
+        if (freeSpins > 0) {
+            card.style.display = "flex";
+            numEl.textContent = freeSpins;
+        } else {
+            card.style.display = "none";
+        }
+    }
+
+    if (freeSpins > 0) {
+        if (btnText) btnText.textContent = `Крутить бесплатно (${freeSpins})`;
+        if (centerSub) centerSub.textContent = `Бесплатно · ${freeSpins} 🎰`;
+        if (sideBtn) sideBtn.classList.add("free-spin");
+    } else {
+        if (btnText) btnText.textContent = "Крутить за 1 000 звёзд";
+        if (centerSub) centerSub.textContent = "1 000 звёзд";
+        if (sideBtn) sideBtn.classList.remove("free-spin");
+    }
+}
+
+async function updateWheelFreeSpinsUI() {
+    const user = currentUser();
+    const freeSpins = user ? await getSpinTickets() : 0;
+
+    const card = document.querySelector("#wheelFreeSpinsCard");
+    const numEl = document.querySelector("#wheelFreeSpins");
+    const btnText = document.querySelector("#wheelSpinBtnText");
+    const centerSub = document.querySelector("#wheelCenterSubtext");
+    const sideBtn = document.querySelector("#wheelSpinBtn");
+
+    if (card && numEl) {
+        if (freeSpins > 0) {
+            card.style.display = "flex";
+            numEl.textContent = freeSpins;
+        } else {
+            card.style.display = "none";
+        }
+    }
+
+    if (freeSpins > 0) {
+        if (btnText) btnText.textContent = `Крутить бесплатно (${freeSpins})`;
+        if (centerSub) centerSub.textContent = `Бесплатно · ${freeSpins} 🎰`;
+        if (sideBtn) sideBtn.classList.add("free-spin");
+    } else {
+        if (btnText) btnText.textContent = "Крутить за 1 000 звёзд";
+        if (centerSub) centerSub.textContent = "1 000 звёзд";
+        if (sideBtn) sideBtn.classList.remove("free-spin");
+    }
 }
 
 function buildConicGradient() {
@@ -6738,10 +6806,15 @@ async function spinWheel() {
         return;
     }
 
-    const stars = getStars();
-    if (stars < WHEEL_SPIN_COST) {
-        showToast(`❌ Нужно ${WHEEL_SPIN_COST} ⭐`);
-        return;
+    const freeSpins = await getSpinTickets();
+    const useFreeSpin = freeSpins > 0;
+
+    if (!useFreeSpin) {
+        const stars = getStars();
+        if (stars < WHEEL_SPIN_COST) {
+            showToast(`❌ Нужно ${WHEEL_SPIN_COST} ⭐`);
+            return;
+        }
     }
 
     wheelSpinning = true;
@@ -6763,7 +6836,16 @@ async function spinWheel() {
     }
     wheelRotation = finalRotation;
 
-    await saveStarsToCloud(stars - WHEEL_SPIN_COST);
+    if (wheelRotation > 360 * 1000) {
+        wheelRotation = wheelRotation % 360;
+    }
+
+    if (useFreeSpin) {
+        await addSpinTickets(-1);
+        showToast(`🎰 Бесплатная крутка! Осталось: ${freeSpins - 1}`);
+    } else {
+        await saveStarsToCloud(getStars() - WHEEL_SPIN_COST);
+    }
 
     setTimeout(async () => {
         const newBalance = getStars() + prize.stars;
@@ -6790,7 +6872,7 @@ async function spinWheel() {
         }
 
         wheelSpinning = false;
-        renderWheel();
+        await renderWheel();
         updateStarsBalance();
         checkAchievements();
     }, 4200);
@@ -6811,6 +6893,8 @@ window.addEventListener("load", () => {
         }
     }, 1000);
 });
+
+window.updateWheelFreeSpinsUI = updateWheelFreeSpinsUI;
 
 document.querySelector("#adminGiveStars")?.addEventListener("click", adminGiveStars);
 document.querySelector("#adminTakeStars")?.addEventListener("click", adminTakeStars);
