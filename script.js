@@ -3958,6 +3958,12 @@ document.querySelector("#logoutBtn")?.addEventListener("click", async () => {
     }
 });
 
+setInterval(async () => {
+    if (currentUser()) {
+        await checkMyBanStatus();
+    }
+}, 30000);
+
 document.querySelector("#profileBtn").addEventListener("click", () => {
     switchTab("profile");
     renderProfile();
@@ -4089,7 +4095,11 @@ async function loadStarsFromCloud() {
 }
 
 async function saveStarsToCloud(value) {
-    localStorage.setItem("vc_stars", String(value));
+    let safeValue = Number(value);
+    if (!isFinite(safeValue) || isNaN(safeValue) || safeValue < 0) safeValue = 0;
+    safeValue = Math.min(Math.floor(safeValue), MAX_STARS);
+
+    localStorage.setItem("vc_stars", String(safeValue));
     updateStarsBalance();
     if (!window.firebaseDB) return;
     const user = currentUser();
@@ -4097,7 +4107,7 @@ async function saveStarsToCloud(value) {
     try {
         const { db, doc, setDoc } = window.firebaseDB;
         const ref = doc(db, "users", user.email);
-        await setDoc(ref, { stars: value }, { merge: true });
+        await setDoc(ref, { stars: safeValue }, { merge: true });
     } catch (e) {
         console.error("Ошибка сохранения:", e);
     }
@@ -4126,13 +4136,30 @@ function getClaimed() {
 function saveClaimed(obj) {
     localStorage.setItem("vc_claimed_days", JSON.stringify(obj));
 }
+
+const MAX_STARS = 1e15;
+
 function getStars() {
-    return parseInt(localStorage.getItem("vc_stars") || "0");
+    const raw = localStorage.getItem("vc_stars") || "0";
+    const val = Number(raw);
+    if (!isFinite(val) || isNaN(val) || val < 0) return 0;
+    return Math.min(Math.floor(val), MAX_STARS);
+}
+
+function formatBigNumber(num) {
+    num = Math.floor(num);
+    if (!isFinite(num)) return "0";
+    if (num >= 1e15) return "1 КВДР";
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + " ТРЛН";
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + " МЛРД";
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + " МЛН";
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + " К";
+    return String(num);
 }
 
 function updateStarsBalance() {
     const el = document.querySelector("#starsCount");
-    if (el) el.textContent = getStars();
+    if (el) el.textContent = formatBigNumber(getStars());
 }
 
 function countStreak() {
@@ -4315,6 +4342,9 @@ async function initAuthListener() {
                     console.error("Ошибка загрузки ника:", e);
                 }
             }
+
+            const isBanned = await checkMyBanStatus();
+            if (isBanned) return;
 
             await loadStarsFromCloud();
             if (typeof loadFramesFromCloud === "function") {
@@ -6277,22 +6307,12 @@ function renderLevelsRoad() {
 document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-chef-tab]");
     if (!btn) return;
-
-    document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    const tabName = btn.dataset.chefTab;
-
-    document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
-    const targetContent = document.querySelector(`[data-chef-content="${tabName}"]`);
-    if (targetContent) targetContent.classList.add("active");
-
-    if (tabName === "friends") {
-        renderRequests();
-        renderFriends();
+    if (btn.dataset.chefTab === "promo") {
+        setTimeout(renderPromoHistory, 100);
     }
-    if (tabName === "leaders") {
-        renderLeaders();
+    if (btn.dataset.chefTab === "admin") {
+        setTimeout(renderAdminPromoList, 100);
+        setTimeout(renderAdminBanList, 100);
     }
 });
 
@@ -6585,7 +6605,7 @@ async function adminGiveStars() {
     if (!user || !isAdminUser(user.email)) return;
 
     const query = document.querySelector("#adminTargetUser").value.trim();
-    const amount = parseInt(document.querySelector("#adminAmount").value);
+    const amount = Number(document.querySelector("#adminAmount").value);
 
     if (!query || !amount || amount < 1) {
         showToast("❌ Заполни оба поля");
@@ -6618,7 +6638,7 @@ async function adminTakeStars() {
     if (!user || !isAdminUser(user.email)) return;
 
     const query = document.querySelector("#adminTakeUser").value.trim();
-    const amount = parseInt(document.querySelector("#adminTakeAmount").value);
+    const amount = Number(document.querySelector("#adminTakeAmount").value);
 
     if (!query || !amount || amount < 1) {
         showToast("❌ Заполни оба поля");
@@ -6651,7 +6671,7 @@ async function adminGiveExp() {
     if (!user || !isAdminUser(user.email)) return;
 
     const query = document.querySelector("#adminGiveExpUser").value.trim();
-    const amount = parseInt(document.querySelector("#adminGiveExpAmount").value);
+    const amount = Number(document.querySelector("#adminGiveExpAmount").value);
 
     if (!query || !amount || amount < 1) {
         showToast("❌ Заполни оба поля");
@@ -6684,7 +6704,7 @@ async function adminTakeExp() {
     if (!user || !isAdminUser(user.email)) return;
 
     const query = document.querySelector("#adminTakeExpUser").value.trim();
-    const amount = parseInt(document.querySelector("#adminTakeExpAmount").value);
+    const amount = Number(document.querySelector("#adminTakeExpAmount").value);
 
     if (!query || !amount || amount < 1) {
         showToast("❌ Заполни оба поля");
@@ -6712,6 +6732,203 @@ async function adminTakeExp() {
         updateLevelDisplay();
     }
 }
+
+/* ================= БАН-СИСТЕМА ================= */
+
+async function adminBanUser() {
+    const me = currentUser();
+    if (!me || !isAdminUser(me.email)) return;
+
+    const query = document.querySelector("#adminBanUser").value.trim();
+    const days = parseInt(document.querySelector("#adminBanDays").value) || 0;
+    const reason = document.querySelector("#adminBanReason").value.trim();
+
+    if (!query) {
+        showToast("❌ Введи ник или email");
+        return;
+    }
+
+    const target = await findUserByNickOrEmail(query);
+    if (!target) {
+        showToast("❌ Пользователь не найден");
+        return;
+    }
+
+    if (isAdminUser(target.email)) {
+        showToast("❌ Нельзя забанить администратора");
+        return;
+    }
+
+    const banUntil = days === 0 ? 0 : Date.now() + days * 24 * 60 * 60 * 1000;
+
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", target.email), {
+            banned: true,
+            banUntil: banUntil,
+            banReason: reason || "Без причины",
+            bannedAt: Date.now(),
+            bannedBy: me.email
+        }, { merge: true });
+
+        const untilText = banUntil === 0
+            ? "навсегда"
+            : `до ${new Date(banUntil).toLocaleString("ru-RU")}`;
+
+        showToast(`🚫 ${target.name || target.email} забанен ${untilText}`);
+
+        document.querySelector("#adminBanUser").value = "";
+        document.querySelector("#adminBanReason").value = "";
+        document.querySelector("#adminBanDays").value = "7";
+
+        renderAdminBanList();
+    } catch (e) {
+        console.error("Ошибка бана:", e);
+        showToast("❌ Ошибка бана");
+    }
+}
+
+async function adminUnbanUser(email) {
+    const me = currentUser();
+    if (!me || !isAdminUser(me.email)) return;
+
+    if (!confirm(`Разбанить ${email}?`)) return;
+
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", email), {
+            banned: false,
+            banUntil: 0,
+            banReason: "",
+            bannedAt: 0,
+            bannedBy: ""
+        }, { merge: true });
+
+        showToast(`✅ ${email} разбанен`);
+        renderAdminBanList();
+    } catch (e) {
+        console.error("Ошибка разбана:", e);
+        showToast("❌ Ошибка разбана");
+    }
+}
+
+async function renderAdminBanList() {
+    const container = document.querySelector("#adminBanList");
+    if (!container) return;
+
+    const users = await getAllUsers();
+    const banned = users.filter(u => u.banned === true);
+
+    if (!banned.length) {
+        container.innerHTML = `<div class="admin-promo-empty">Нет забаненных пользователей</div>`;
+        return;
+    }
+
+    container.innerHTML = banned.map(u => {
+        const untilText = !u.banUntil
+            ? "навсегда"
+            : `до ${new Date(u.banUntil).toLocaleDateString("ru-RU")}`;
+
+        return `
+            <div class="admin-ban-item">
+                <span class="ban-user">🚫 ${u.name || u.email} (@${u.nick || "без_ника"})</span>
+                <span class="ban-until">${untilText}</span>
+                <button class="unban-btn" data-unban="${u.email}">✅ Разбанить</button>
+            </div>
+        `;
+    }).join("");
+}
+
+async function checkMyBanStatus() {
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return false;
+
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        if (!snap.exists()) return false;
+
+        const data = snap.data();
+        if (data.banned !== true) return false;
+
+        if (data.banUntil && Date.now() >= data.banUntil) {
+            await window.firebaseDB.setDoc(doc(db, "users", user.email), {
+                banned: false,
+                banUntil: 0,
+                banReason: ""
+            }, { merge: true });
+            return false;
+        }
+
+        showBanScreen(data.banReason, data.banUntil);
+        return true;
+    } catch (e) {
+        console.error("Ошибка проверки бана:", e);
+        return false;
+    }
+}
+
+function showBanScreen(reason, banUntil) {
+    const screen = document.querySelector("#banScreen");
+    if (!screen) return;
+
+    screen.classList.remove("hidden");
+
+    const reasonEl = document.querySelector("#banReasonText");
+    if (reasonEl) {
+        reasonEl.textContent = reason ? `Причина: ${reason}` : "Причина не указана";
+    }
+
+    const timeEl = document.querySelector("#banTimeLeft");
+    if (timeEl) {
+        if (!banUntil) {
+            timeEl.textContent = "навсегда";
+        } else {
+            updateBanTimer(banUntil);
+            if (window._banTimer) clearInterval(window._banTimer);
+            window._banTimer = setInterval(() => updateBanTimer(banUntil), 1000);
+        }
+    }
+}
+
+function updateBanTimer(banUntil) {
+    const el = document.querySelector("#banTimeLeft");
+    if (!el) return;
+
+    const left = banUntil - Date.now();
+    if (left <= 0) {
+        el.textContent = "истёк";
+        if (window._banTimer) clearInterval(window._banTimer);
+        location.reload();
+        return;
+    }
+
+    const days = Math.floor(left / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((left % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((left % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((left % (1000 * 60)) / 1000);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days} д.`);
+    if (hours > 0) parts.push(`${hours} ч.`);
+    if (minutes > 0) parts.push(`${minutes} мин.`);
+    parts.push(`${seconds} сек.`);
+
+    el.textContent = parts.join(" ");
+}
+
+document.querySelector("#adminBanBtn")?.addEventListener("click", adminBanUser);
+document.querySelector("#adminBanList")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-unban]");
+    if (btn) adminUnbanUser(btn.dataset.unban);
+});
+
+document.querySelector("#banLogoutBtn")?.addEventListener("click", async () => {
+    if (window._banTimer) clearInterval(window._banTimer);
+    await window.firebaseAuth.signOut(window.firebaseAuth.auth);
+    localStorage.removeItem("vc_user_email");
+    location.reload();
+});
 
 /* ================= ГЕНЕРАТОР ПРОМОКОДА ================= */
 
@@ -6840,10 +7057,27 @@ document.querySelectorAll("[data-quick-exp]").forEach(btn => {
 document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-chef-tab]");
     if (!btn) return;
-    if (btn.dataset.chefTab === "promo") {
+
+    document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const tabName = btn.dataset.chefTab;
+
+    document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
+    const targetContent = document.querySelector(`[data-chef-content="${tabName}"]`);
+    if (targetContent) targetContent.classList.add("active");
+
+    if (tabName === "friends") {
+        renderRequests();
+        renderFriends();
+    }
+    if (tabName === "leaders") {
+        renderLeaders();
+    }
+    if (tabName === "promo") {
         setTimeout(renderPromoHistory, 100);
     }
-    if (btn.dataset.chefTab === "admin") {
+    if (tabName === "admin") {
         setTimeout(renderAdminPromoList, 100);
     }
 });
@@ -7410,4 +7644,3 @@ document.querySelector("#friendsInnerTabs")?.addEventListener("click", (e) => {
     if (sub === "list") renderFriends();
     if (sub === "requests") renderRequests();
 });
-
