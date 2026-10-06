@@ -490,6 +490,22 @@
                                     <span class="admin-badge">только для админов</span>
                                 </div>
 
+                                <div class="admin-section admin-section-ban">
+                                    <h3>🚫 Забанить пользователя</h3>
+                                    <p class="admin-desc">Введи ник или email, срок бана и причину</p>
+                                    <div class="admin-form admin-form-ban">
+                                        <input type="text" id="adminBanUser" placeholder="Ник или email"
+                                            autocomplete="off">
+                                        <input type="number" id="adminBanDays" placeholder="Дней (0 = навсегда)" min="0"
+                                            value="7">
+                                        <button id="adminBanBtn" class="admin-btn-ban">🚫 Забанить</button>
+                                    </div>
+                                    <input type="text" id="adminBanReason" placeholder="Причина бана (необязательно)"
+                                        autocomplete="off"
+                                        style="width:100%;margin-top:10px;border:2px solid #fbbf24;border-radius:10px;padding:12px 14px;font-size:14px;outline:none;">
+                                    <div id="adminBanList" class="admin-ban-list" style="margin-top:16px;"></div>
+                                </div>
+
                                 <div class="admin-section">
                                     <h3>🎁 Начислить звёзды</h3>
                                     <p class="admin-desc">Введи ник или email и сколько звёзд подарить</p>
@@ -505,6 +521,8 @@
                                         <button data-quick-give="100000">+100К</button>
                                         <button data-quick-give="1000000">+1МЛН</button>
                                         <button data-quick-give="1000000000">+1МЛРД</button>
+                                        <button data-quick-give="1000000000000">+1ТРЛН</button>
+                                        <button data-quick-give="1000000000000000">+1КВДР</button>
                                     </div>
                                 </div>
 
@@ -533,6 +551,8 @@
                                         <button data-quick-exp="1000">+1К</button>
                                         <button data-quick-exp="10000">+10К</button>
                                         <button data-quick-exp="100000">+100К</button>
+                                        <button data-quick-exp="1000000">+1МЛН</button>
+                                        <button data-quick-exp="1000000000">+1МЛРД</button>
                                     </div>
                                 </div>
 
@@ -1033,6 +1053,17 @@
         <div class="modal-box">
             <button class="close" id="closeModal">×</button>
             <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div id="banScreen" class="ban-screen hidden">
+        <div class="ban-box">
+            <div class="ban-icon">🚫</div>
+            <h1>Аккаунт заблокирован</h1>
+            <p class="ban-reason" id="banReasonText"></p>
+            <p class="ban-time">Осталось: <b id="banTimeLeft">—</b></p>
+            <p class="ban-hint">Если вы считаете это ошибкой — свяжитесь с администрацией.</p>
+            <button id="banLogoutBtn" class="ban-logout">Выйти из аккаунта</button>
         </div>
     </div>
 
