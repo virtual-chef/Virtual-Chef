@@ -6816,7 +6816,7 @@ async function deletePromo(code) {
 document.querySelector("#promoForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = document.querySelector("#promoInput");
-    await activatePromo(input.value);
+    if (input) await activatePromo(input.value);
 });
 
 document.querySelector("#adminGiveExp")?.addEventListener("click", adminGiveExp);
