@@ -3403,7 +3403,7 @@ document.querySelector("#searchForm").addEventListener("submit", e => {
     }
 });
 
-document.querySelector("#openFavorites").addEventListener("click", () => {
+document.querySelector("#openFavorites")?.addEventListener("click", () => {
     switchTab("recipes");
     renderTo(recipesPageGrid, recipes.filter(r => favorites.includes(r.id)));
 });
@@ -3461,6 +3461,20 @@ const ACHIEVEMENTS = [
     { id: "friend_5", icon: "👥", name: "Компания", desc: "5 друзей" },
     { id: "friend_10", icon: "🎉", name: "Тусовщик", desc: "10 друзей" },
     { id: "gifted_1k", icon: "🎁", name: "Щедрый", desc: "Подарил 1000 ⭐ друзьям" },
+    { id: "unlucky", icon: "😢", name: "Невезенье — моё второе имя", desc: "Выбить «Ничего» на колесе 5 раз" },
+    { id: "lucky_1", icon: "🍀", name: "Первый фарт", desc: "Выиграть на колесе фортуны" },
+    { id: "lucky_10", icon: "🎰", name: "Азартный", desc: "Крутить колесо 10 раз" },
+    { id: "lucky_50", icon: "🎲", name: "Игрок", desc: "Крутить колесо 50 раз" },
+    { id: "wheel_rich", icon: "💸", name: "Везунчик", desc: "Выбить 100 000 ⭐ с колеса" },
+    { id: "wheel_secret", icon: "🎁", name: "Что там?", desc: "Выбить секретный приз на колесе" },
+    { id: "wheel_jackpot", icon: "👑", name: "Джекпот", desc: "Выбить 500 000 ⭐ с колеса" },
+    { id: "hidden", icon: "🕵️", name: "Скрытный", desc: "Скрыть свой профиль от других" },
+    { id: "open_book", icon: "📖", name: "Открытая книга", desc: "Открыть профиль для всех" },
+    { id: "promo_1", icon: "🎟️", name: "Промо-охотник", desc: "Активировать первый промокод" },
+    { id: "promo_5", icon: "🎫", name: "Коллекционер кодов", desc: "Активировать 5 промокодов" },
+    { id: "title_1", icon: "🏆", name: "Титулованный", desc: "Получить первый титул" },
+    { id: "title_max", icon: "👑", name: "Легенда кухни", desc: "Получить титул «Легенда»" },
+    { id: "full_set", icon: "💯", name: "Полный комплект", desc: "Открыть все 42 достижения" },
 ];
 
 function getAchievementProgress(id) {
@@ -3506,6 +3520,20 @@ function getAchievementProgress(id) {
         "friend_5": { current: Math.min(friendsCount, 5), target: 5 },
         "friend_10": { current: Math.min(friendsCount, 10), target: 10 },
         "gifted_1k": { current: Math.min(giftedStars, 1000), target: 1000 },
+        "unlucky": { current: Math.min(getWheelNothingCount(), 5), target: 5 },
+        "lucky_1": { current: Math.min(getWheelTotalSpins(), 1), target: 1 },
+        "lucky_10": { current: Math.min(getWheelTotalSpins(), 10), target: 10 },
+        "lucky_50": { current: Math.min(getWheelTotalSpins(), 50), target: 50 },
+        "wheel_rich": { current: Math.min(getWheelBiggestWin(), 100000), target: 100000 },
+        "wheel_secret": { current: Math.min(getWheelSecretCount(), 1), target: 1 },
+        "wheel_jackpot": { current: Math.min(getWheelBiggestWin(), 500000), target: 500000 },
+        "hidden": { current: isProfileHidden() ? 1 : 0, target: 1 },
+        "open_book": { current: isProfileHidden() ? 0 : 1, target: 1 },
+        "promo_1": { current: Math.min(getUsedPromosCount(), 1), target: 1 },
+        "promo_5": { current: Math.min(getUsedPromosCount(), 5), target: 5 },
+        "title_1": { current: Math.min(getTitlesOwnedCount(), 1), target: 1 },
+        "title_max": { current: userTitles && userTitles.owned && userTitles.owned.includes("legend") ? 1 : 0, target: 1 },
+        "full_set": { current: getUnlockedCount(), target: 42 },
     };
 
     return progress[id] || { current: 0, target: 1 };
@@ -3637,6 +3665,30 @@ function checkAchievements() {
 
     const giftedStars = getGiftedStars();
     if (giftedStars >= 1000) unlockAchievement(user, "gifted_1k");
+    const totalSpins = getWheelTotalSpins();
+    if (totalSpins >= 1) unlockAchievement(user, "lucky_1");
+    if (totalSpins >= 10) unlockAchievement(user, "lucky_10");
+    if (totalSpins >= 50) unlockAchievement(user, "lucky_50");
+
+    if (getWheelNothingCount() >= 5) unlockAchievement(user, "unlucky");
+    if (getWheelBiggestWin() >= 100000) unlockAchievement(user, "wheel_rich");
+    if (getWheelBiggestWin() >= 500000) unlockAchievement(user, "wheel_jackpot");
+    if (getWheelSecretCount() >= 1) unlockAchievement(user, "wheel_secret");
+
+    if (isProfileHidden()) unlockAchievement(user, "hidden");
+    else unlockAchievement(user, "open_book");
+
+    const promosUsed = getUsedPromosCount();
+    if (promosUsed >= 1) unlockAchievement(user, "promo_1");
+    if (promosUsed >= 5) unlockAchievement(user, "promo_5");
+
+    const titlesOwned = getTitlesOwnedCount();
+    if (titlesOwned >= 1) unlockAchievement(user, "title_1");
+    if (userTitles && userTitles.owned && userTitles.owned.includes("legend")) {
+        unlockAchievement(user, "title_max");
+    }
+
+    if (getUnlockedCount() >= 42) unlockAchievement(user, "full_set");
 }
 
 function showToast(text) {
@@ -3719,16 +3771,6 @@ function renderProfile() {
         realNameEl.textContent = "@" + nick + " · " + emailShort;
     }
 
-    const dateEl = document.querySelector("#profileDate");
-    if (dateEl) {
-        const regDate = new Date(freshUser.registered || Date.now());
-        dateEl.textContent = regDate.toLocaleDateString("ru-RU", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        });
-    }
-
     const statOpenedEl = document.querySelector("#statOpened");
     if (statOpenedEl) statOpenedEl.textContent = freshUser.stats.opened;
 
@@ -3778,6 +3820,7 @@ function renderProfile() {
     updateLevelDisplay();
     renderLevelsRoad();
     applyActiveTitle();
+    updateNavAvatar();
 }
 
 const loginForm = document.querySelector("#loginForm");
@@ -4284,6 +4327,8 @@ async function initAuthListener() {
                 await loadTitlesFromCloud();
             }
             await loadAchievementsFromCloud();
+            await loadPrivacyFromCloud();
+            updateNavAvatar();
             const tempUser = currentUser();
             if (tempUser && isSuperUser(tempUser.email)) {
                 const allIds = ACHIEVEMENTS.map(a => a.id);
@@ -4302,6 +4347,7 @@ async function initAuthListener() {
             applyActiveTitle();
         } else {
             localStorage.removeItem("vc_user_email");
+            updateNavAvatar();
         }
         renderProfile();
     });
@@ -4378,6 +4424,7 @@ async function saveTitlesToCloud() {
     } catch (e) {
         console.error("Ошибка сохранения титулов:", e);
     }
+    checkAchievements();
 }
 
 function renderTitlesGrid() {
@@ -4542,10 +4589,39 @@ async function saveAvatarsToCloud() {
 
 function applyActiveFrame() {
     const avatar = document.querySelector("#profileAvatar");
-    if (!avatar) return;
-    avatar.className = "profile-avatar";
-    if (userFrames.active) {
-        avatar.classList.add("frame-" + userFrames.active);
+    if (avatar) {
+        avatar.className = "profile-avatar";
+        if (userFrames.active) {
+            avatar.classList.add("frame-" + userFrames.active);
+        }
+    }
+    updateNavAvatar();
+}
+
+function updateNavAvatar() {
+    const el = document.querySelector("#navAvatar");
+    if (!el) return;
+
+    const user = currentUser();
+
+    el.className = "nav-avatar";
+    el.innerHTML = "";
+
+    if (!user) {
+        el.innerHTML = `<span>👤</span>`;
+        return;
+    }
+
+    const letter = (user.name || "?")[0].toUpperCase();
+
+    if (typeof userAvatars !== "undefined" && userAvatars.active) {
+        el.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="">`;
+    } else {
+        el.innerHTML = `<span>${letter}</span>`;
+    }
+
+    if (typeof userFrames !== "undefined" && userFrames.active) {
+        el.classList.add("frame-" + userFrames.active);
     }
 }
 
@@ -4563,6 +4639,7 @@ function applyActiveAvatar() {
     } else {
         avatar.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${letter}</span>`;
     }
+    updateNavAvatar();
 }
 
 function renderShopSection(sectionKey) {
@@ -5170,7 +5247,12 @@ async function searchUserByNick(nick) {
         const email = nickSnap.data().email;
         const userRef = doc(db, "users", email);
         const userSnap = await getDoc(userRef);
-        return userSnap.exists() ? { email: userSnap.id, ...userSnap.data() } : null;
+        if (!userSnap.exists()) return null;
+
+        const data = userSnap.data();
+        if (data.privacyHidden === true) return null;
+
+        return { email: userSnap.id, ...data };
     } catch (e) {
         console.error("Ошибка поиска:", e);
         return null;
@@ -5348,17 +5430,30 @@ async function renderFriends() {
 
     container.innerHTML = friendsData.map((f, i) => {
         if (!f) return "";
+        const friendEmail = friends[i];
+        const letter = (f.name || "?")[0].toUpperCase();
+
+        let avatarHTML = "";
+        if (f.activeAvatar) {
+            avatarHTML = `<img src="images/avatar-${f.activeAvatar}.png" alt="">`;
+        } else {
+            avatarHTML = letter;
+        }
+
+        let avatarCls = "avatar";
+        if (f.activeFrame) avatarCls += " frame-" + f.activeFrame;
+
         return `
             <div class="friend-row">
-                <div class="avatar">${(f.name || "?")[0].toUpperCase()}</div>
+                <div class="${avatarCls}">${avatarHTML}</div>
                 <div class="info">
                     <b>${f.name || "Без имени"}</b>
                     <small>@${f.nick || "без_ника"} · ⭐ ${f.stars || 0} · 🏆 ${f.achievements?.length || 0}</small>
                 </div>
                 <div class="actions">
-                    <button class="btn-profile" data-view-friend="${friends[i]}">👤 Профиль</button>
-                    <button class="btn-gift" data-gift="${friends[i]}">⭐ Подарить</button>
-                    <button class="btn-remove" data-remove-friend="${friends[i]}">🗑</button>
+                    <button class="btn-profile" data-view-friend="${friendEmail}">👤 Профиль</button>
+                    <button class="btn-gift" data-gift="${friendEmail}">⭐ Подарить</button>
+                    <button class="btn-remove" data-remove-friend="${friendEmail}">🗑</button>
                 </div>
             </div>
         `;
@@ -5494,6 +5589,188 @@ function getGiftedStars() {
     return parseInt(localStorage.getItem("vc_gifted_stars") || "0");
 }
 
+function getWheelTotalSpins() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return 0;
+    return parseInt(localStorage.getItem("vc_wheel_total_" + email) || "0");
+}
+
+function getWheelNothingCount() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return 0;
+    return parseInt(localStorage.getItem("vc_wheel_nothing_" + email) || "0");
+}
+
+function addWheelNothingCount() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    const current = getWheelNothingCount();
+    localStorage.setItem("vc_wheel_nothing_" + email, String(current + 1));
+}
+
+function getWheelBiggestWin() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return 0;
+    return parseInt(localStorage.getItem("vc_wheel_biggest_" + email) || "0");
+}
+
+function setWheelBiggestWin(value) {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    const current = getWheelBiggestWin();
+    if (value > current) {
+        localStorage.setItem("vc_wheel_biggest_" + email, String(value));
+    }
+}
+
+function getWheelSecretCount() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return 0;
+    return parseInt(localStorage.getItem("vc_wheel_secret_" + email) || "0");
+}
+
+function addWheelSecretCount() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    const current = getWheelSecretCount();
+    localStorage.setItem("vc_wheel_secret_" + email, String(current + 1));
+}
+
+function getUsedPromosCount() {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return 0;
+    return JSON.parse(localStorage.getItem("vc_promos_" + email) || "[]").length;
+}
+
+function addUsedPromo(code) {
+    const email = localStorage.getItem("vc_user_email");
+    if (!email) return;
+    const list = JSON.parse(localStorage.getItem("vc_promos_" + email) || "[]");
+    if (!list.includes(code)) {
+        list.push(code);
+        localStorage.setItem("vc_promos_" + email, JSON.stringify(list));
+    }
+}
+
+function getTitlesOwnedCount() {
+    if (typeof userTitles === "undefined" || !userTitles.owned) return 0;
+    return userTitles.owned.length;
+}
+
+/* ================= ПРИВАТНОСТЬ ================= */
+
+let userPrivacy = {
+    recipes: "all",
+    friends: "all",
+    hidden: false
+};
+
+function isProfileHidden() {
+    return userPrivacy.hidden === true;
+}
+
+function getUnlockedCount() {
+    const user = currentUser();
+    if (!user) return 0;
+    return user.achievements ? user.achievements.length : 0;
+}
+
+async function loadPrivacyFromCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        if (snap.exists()) {
+            const data = snap.data();
+            userPrivacy.recipes = data.privacyRecipes || "all";
+            userPrivacy.friends = data.privacyFriends || "all";
+            userPrivacy.hidden = data.privacyHidden === true;
+        }
+        applyPrivacyToUI();
+    } catch (e) {
+        console.error("Ошибка загрузки приватности:", e);
+    }
+}
+
+async function savePrivacyToCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), {
+            privacyRecipes: userPrivacy.recipes,
+            privacyFriends: userPrivacy.friends,
+            privacyHidden: userPrivacy.hidden
+        }, { merge: true });
+        checkAchievements();
+    } catch (e) {
+        console.error("Ошибка сохранения приватности:", e);
+    }
+}
+
+function applyPrivacyToUI() {
+    document.querySelectorAll("[data-privacy-toggle]").forEach(group => {
+        const key = group.dataset.privacyToggle;
+        const value = userPrivacy[key] || "all";
+
+        group.querySelectorAll(".settings-toggle-btn").forEach(btn => {
+            btn.classList.toggle("active", btn.dataset.value === value);
+        });
+    });
+
+    const hiddenEl = document.querySelector("#privacyHidden");
+    if (hiddenEl) hiddenEl.checked = userPrivacy.hidden;
+}
+
+function initPrivacyControls() {
+    document.querySelectorAll("[data-privacy-toggle]").forEach(group => {
+        group.addEventListener("click", async (e) => {
+            const btn = e.target.closest(".settings-toggle-btn");
+            if (!btn) return;
+
+            const key = group.dataset.privacyToggle;
+            const value = btn.dataset.value;
+
+            if (userPrivacy[key] === value) return;
+
+            userPrivacy[key] = value;
+
+            group.querySelectorAll(".settings-toggle-btn").forEach(b => {
+                b.classList.toggle("active", b === btn);
+            });
+
+            await savePrivacyToCloud();
+            showToast("✅ Настройка сохранена");
+        });
+    });
+
+    document.querySelector("#privacyHidden")?.addEventListener("change", async (e) => {
+        userPrivacy.hidden = e.target.checked;
+        await savePrivacyToCloud();
+        showToast(userPrivacy.hidden ? "🕵️ Профиль скрыт" : "🌍 Профиль открыт");
+    });
+}
+
+function canView(targetUser, type) {
+    const me = currentUser();
+    if (!me) return false;
+    if (me.email === targetUser.email) return true;
+
+    const setting = type === "recipes"
+        ? (targetUser.privacyRecipes || "all")
+        : (targetUser.privacyFriends || "all");
+
+    if (setting === "all") return true;
+    if (setting === "friends") {
+        const myFriends = JSON.parse(localStorage.getItem("vc_friends_list") || "[]");
+        return myFriends.includes(targetUser.email);
+    }
+    return true;
+}
+
 function addGiftedStars(amount) {
     const current = getGiftedStars();
     localStorage.setItem("vc_gifted_stars", String(current + amount));
@@ -5585,11 +5862,6 @@ async function openFriendPage(friend) {
         }
     }
 
-    const registered = friend.registered || Date.now();
-    setText("#friendDate", new Date(registered).toLocaleDateString("ru-RU", {
-        day: "2-digit", month: "2-digit", year: "numeric"
-    }));
-
     const achievements = friend.achievements || [];
     setText("#friendCooked", friend.stats?.opened || 0);
     setText("#friendFavs", friend.favorites?.length || 0);
@@ -5646,13 +5918,18 @@ async function openFriendPage(friend) {
     renderFriendLevelsRoad(friendProg.level, friendPremium);
 
     try {
-        const friendsOfFriend = await Promise.all(friendFriends.map(e => getUserData(e)));
+        const canSee = canView(friend, "friends");
         const listEl = document.querySelector("#friendFriendsList");
-        if (listEl) {
-            const valid = friendsOfFriend.filter(f => f);
-            listEl.innerHTML = valid.length === 0
-                ? `<span class="friend-chip">Нет друзей</span>`
-                : valid.map(f => `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`).join("");
+        if (listEl && !canSee) {
+            listEl.innerHTML = `<span class="friend-chip">🔒 Скрыто настройками приватности</span>`;
+        } else {
+            const friendsOfFriend = await Promise.all(friendFriends.map(e => getUserData(e)));
+            if (listEl) {
+                const valid = friendsOfFriend.filter(f => f);
+                listEl.innerHTML = valid.length === 0
+                    ? `<span class="friend-chip">Нет друзей</span>`
+                    : valid.map(f => `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`).join("");
+            }
         }
     } catch (e) {
         console.error("Ошибка загрузки друзей друга:", e);
@@ -5997,7 +6274,6 @@ function renderLevelsRoad() {
     road.innerHTML = html;
 }
 
-
 document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-chef-tab]");
     if (!btn) return;
@@ -6014,6 +6290,9 @@ document.addEventListener("click", (e) => {
     if (tabName === "friends") {
         renderRequests();
         renderFriends();
+    }
+    if (tabName === "leaders") {
+        renderLeaders();
     }
 });
 
@@ -6057,6 +6336,7 @@ function toggleViewMode() {
 }
 
 applyViewMode();
+initPrivacyControls();
 
 /* ================= ПРОМОКОДЫ ================= */
 
@@ -6190,6 +6470,7 @@ async function activatePromo(codeRaw) {
             activatedBy: arrayUnion(user.email)
         });
 
+        addUsedPromo(code);
         const rewardText = formatPromoRewards(promo).join(" · ");
         setError(`🎉 ${rewardText}`, true);
         if (input) input.value = "";
@@ -6866,9 +7147,15 @@ async function spinWheel() {
         await saveWheelDataToCloud(data);
 
         if (prize.stars === 0) {
+            addWheelNothingCount();
             showToast(`😢 Выпало: ${prize.emoji} Ничего. Не повезло!`);
         } else {
+            setWheelBiggestWin(prize.stars);
             showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}!${guarantee ? " (гарант)" : ""}`);
+        }
+
+        if (prize.id === "p9") {
+            addWheelSecretCount();
         }
 
         wheelSpinning = false;
@@ -6898,3 +7185,229 @@ window.updateWheelFreeSpinsUI = updateWheelFreeSpinsUI;
 
 document.querySelector("#adminGiveStars")?.addEventListener("click", adminGiveStars);
 document.querySelector("#adminTakeStars")?.addEventListener("click", adminTakeStars);
+
+/* ================= ТАБЛИЦА ЛИДЕРОВ ================= */
+
+let leadersScope = "friends";
+let leadersSort = "stars";
+
+async function getAllUsers() {
+    if (!window.firebaseDB) return [];
+    try {
+        const { db, collection, getDocs } = window.firebaseDB;
+        const snap = await getDocs(collection(db, "users"));
+        const list = [];
+        snap.forEach(d => list.push({ email: d.id, ...d.data() }));
+        return list;
+    } catch (e) {
+        console.error("Ошибка загрузки юзеров:", e);
+        return [];
+    }
+}
+
+async function getFriendsList() {
+    const me = currentUser();
+    if (!me) return [];
+    const data = await getUserData(me.email);
+    return data?.friends || [];
+}
+
+function getLeaderStats(user) {
+    const exp = user.exp || 0;
+    const stars = user.stars || 0;
+    const level = getLevelFromExp(exp);
+    return { exp, stars, level };
+}
+
+function buildAvatarWithFrame(user) {
+    const letter = (user.name || "?")[0].toUpperCase();
+    const hasAvatar = user.activeAvatar;
+    const hasFrame = user.activeFrame;
+
+    let inner = "";
+    if (hasAvatar) {
+        inner = `<img src="images/avatar-${user.activeAvatar}.png" alt="">`;
+    } else {
+        inner = `<span style="color:#fff;font-size:18px;font-weight:800;">${letter}</span>`;
+    }
+
+    let cls = "leader-avatar";
+    if (hasFrame) cls += " frame-" + hasFrame;
+
+    return `<div class="${cls}">${inner}</div>`;
+}
+
+function buildFriendAvatarWithFrame(user) {
+    const letter = (user.name || "?")[0].toUpperCase();
+    const hasAvatar = user.activeAvatar;
+    const hasFrame = user.activeFrame;
+
+    let inner = "";
+    if (hasAvatar) {
+        inner = `<img src="images/avatar-${user.activeAvatar}.png" alt="">`;
+    } else {
+        inner = letter;
+    }
+
+    let cls = "avatar";
+    if (hasFrame) cls += " frame-" + hasFrame;
+
+    return `<div class="${cls}">${inner}</div>`;
+}
+
+function getLeaderPlaceIcon(place) {
+    if (place === 1) return "🥇";
+    if (place === 2) return "🥈";
+    if (place === 3) return "🥉";
+    return place;
+}
+
+async function loadLeadersData() {
+    const me = currentUser();
+    if (!me) return [];
+
+    let users = await getAllUsers();
+
+    if (leadersScope === "friends") {
+        const friends = await getFriendsList();
+        const allowed = new Set([me.email, ...friends]);
+        users = users.filter(u => allowed.has(u.email));
+    }
+
+    users.sort((a, b) => {
+        const sa = getLeaderStats(a);
+        const sb = getLeaderStats(b);
+        if (leadersSort === "stars") return (sb.stars || 0) - (sa.stars || 0);
+        if (leadersSort === "level") return (sb.level || 0) - (sa.level || 0);
+        return (sb.exp || 0) - (sa.exp || 0);
+    });
+
+    return users;
+}
+
+function renderLeaderRow(user, place, isMe) {
+    const stats = getLeaderStats(user);
+    const displayName = user.name || "Без имени";
+
+    let rowClass = "leader-row";
+    if (place === 1) rowClass += " top-1";
+    else if (place === 2) rowClass += " top-2";
+    else if (place === 3) rowClass += " top-3";
+
+    return `
+        <div class="${rowClass}" data-leader-email="${user.email}" style="cursor:pointer;">
+            <div class="leader-place">${getLeaderPlaceIcon(place)}</div>
+            ${buildAvatarWithFrame(user)}
+            <div class="leader-info">
+                <b>${isMe ? "👤 " : ""}${displayName}</b>
+                <small>@${user.nick || "без_ника"} · Ур. ${stats.level}</small>
+            </div>
+            <div class="leader-stats">
+                <div class="leader-stat">
+                    <b>${stats.stars.toLocaleString("ru-RU")}</b>
+                    <small>⭐ звёзд</small>
+                </div>
+                <div class="leader-stat">
+                    <b>${stats.exp.toLocaleString("ru-RU")}</b>
+                    <small>📈 очков</small>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function renderLeaders() {
+    const listEl = document.querySelector("#leadersList");
+    const myEl = document.querySelector("#leadersMyRating");
+    if (!listEl) return;
+
+    listEl.innerHTML = `<div class="friends-empty">Загрузка...</div>`;
+    if (myEl) myEl.innerHTML = "";
+
+    const me = currentUser();
+    if (!me) {
+        listEl.innerHTML = `<div class="friends-empty">Войдите, чтобы увидеть таблицу лидеров</div>`;
+        return;
+    }
+
+    const users = await loadLeadersData();
+
+    if (!users.length) {
+        listEl.innerHTML = `<div class="friends-empty">Пока никого нет</div>`;
+        return;
+    }
+
+    listEl.innerHTML = users.map((u, i) =>
+        renderLeaderRow(u, i + 1, u.email === me.email)
+    ).join("");
+
+    const myIndex = users.findIndex(u => u.email === me.email);
+
+    const scopeText = leadersScope === "friends" ? "среди друзей" : "в мире";
+
+    if (myIndex >= 0 && myEl) {
+        myEl.innerHTML = `
+            <div class="my-place">${getLeaderPlaceIcon(myIndex + 1)}</div>
+            <div class="my-info">
+                <b style="font-size:22px;">Топ ${myIndex + 1} ${scopeText}</b>
+            </div>
+        `;
+    } else if (myEl) {
+        myEl.innerHTML = `
+            <div class="my-place">—</div>
+            <div class="my-info">
+                <b style="font-size:20px;">Ты не в рейтинге ${scopeText}</b>
+            </div>
+        `;
+    }
+}
+
+document.querySelector("#leadersScopeTabs")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".leaders-tab");
+    if (!btn) return;
+    document.querySelectorAll(".leaders-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    leadersScope = btn.dataset.scope;
+    renderLeaders();
+});
+
+document.querySelector("#leadersSortSelect")?.addEventListener("change", (e) => {
+    leadersSort = e.target.value;
+    renderLeaders();
+});
+
+document.querySelector("#leadersList")?.addEventListener("click", async (e) => {
+    const row = e.target.closest("[data-leader-email]");
+    if (!row) return;
+    const email = row.dataset.leaderEmail;
+    const me = currentUser();
+    if (!me) return;
+    if (email === me.email) return;
+
+    const friend = await getUserData(email);
+    if (friend) {
+        await openFriendPage({ email, ...friend });
+    }
+});
+
+window.renderLeaders = renderLeaders;
+
+/* ================= ТАБЫ ВНУТРИ ДРУЗЕЙ ================= */
+
+document.querySelector("#friendsInnerTabs")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".friends-inner-tab");
+    if (!btn) return;
+
+    document.querySelectorAll(".friends-inner-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const sub = btn.dataset.friendsSub;
+
+    document.querySelectorAll(".friends-sub-content").forEach(c => c.classList.remove("active"));
+    const target = document.querySelector(`[data-friends-sub-content="${sub}"]`);
+    if (target) target.classList.add("active");
+
+    if (sub === "list") renderFriends();
+    if (sub === "requests") renderRequests();
+});
+
