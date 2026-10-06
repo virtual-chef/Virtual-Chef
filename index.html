@@ -54,9 +54,10 @@
                 <button class="shop-btn" title="Магазин" id="shopBtn">🛒</button>
                 <button class="view-toggle-btn" title="Переключить версию" id="viewToggle"
                     onclick="toggleViewMode()">🖥</button>
-                <button title="Избранное" id="openFavorites">♡</button>
                 <button title="Профиль" id="profileBtn" class="icon-btn">
-                    <img class="nav-icon" src="images/nav-profile.png" alt="">
+                    <div class="nav-avatar" id="navAvatar">
+                        <span>👤</span>
+                    </div>
                 </button>
             </div>
 
@@ -302,7 +303,6 @@
                             <div class="chef-hero-info">
                                 <h1 class="chef-name" id="profileName">—</h1>
                                 <p class="chef-realname" id="profileRealName">—</p>
-                                <p class="chef-bio">📅 С нами с <span id="profileDate">—</span></p>
                             </div>
                             <div class="chef-title-badge hidden" id="profileTitleBadge">
                                 <span id="profileTitleText">—</span>
@@ -367,6 +367,9 @@
                         <button class="chef-sidebar-btn" data-chef-tab="friends">
                             <span>👥</span> Друзья
                         </button>
+                        <button class="chef-sidebar-btn" data-chef-tab="leaders">
+                            <span>🏆</span> Таблица лидеров
+                        </button>
                         <button class="chef-sidebar-btn" data-chef-tab="notifications">
                             <span>🔔</span> Уведомления
                         </button>
@@ -426,16 +429,50 @@
                                 <div id="friendsSearchResult"></div>
                             </div>
 
-                            <div class="chef-section" id="requestsSection">
-                                <h2>📨 Заявки в друзья <span id="requestsCount">(0)</span></h2>
-                                <div id="requestsList"></div>
-                            </div>
-
                             <div class="chef-section">
-                                <h2>🤝 Мои друзья <span id="friendsCount">(0)</span></h2>
-                                <div id="friendsList"></div>
+                                <div class="friends-inner-tabs" id="friendsInnerTabs">
+                                    <button class="friends-inner-tab active" data-friends-sub="list">
+                                        👥 Мои друзья <span id="friendsCount">(0)</span>
+                                    </button>
+                                    <button class="friends-inner-tab" data-friends-sub="requests">
+                                        📨 Заявки <span id="requestsCount">(0)</span>
+                                    </button>
+                                </div>
+
+                                <div class="friends-sub-content active" data-friends-sub-content="list">
+                                    <div id="friendsList"></div>
+                                </div>
+
+                                <div class="friends-sub-content" data-friends-sub-content="requests">
+                                    <div id="requestsList"></div>
+                                </div>
                             </div>
 
+                        </div>
+
+                        <div class="chef-tab-content" data-chef-content="leaders">
+                            <div class="chef-section">
+                                <div class="chef-section-head">
+                                    <h2>🏆 Таблица лидеров</h2>
+                                </div>
+
+                                <div class="leaders-toolbar">
+                                    <div class="leaders-tabs" id="leadersScopeTabs">
+                                        <button class="leaders-tab active" data-scope="friends">🤝 Друзья</button>
+                                        <button class="leaders-tab" data-scope="all">🌍 Всемирная</button>
+                                    </div>
+
+                                    <select class="leaders-sort-select" id="leadersSortSelect">
+                                        <option value="stars">⭐ По звёздам</option>
+                                        <option value="exp">📈 По очкам</option>
+                                        <option value="level">🎖 По уровню</option>
+                                    </select>
+                                </div>
+
+                                <div class="leaders-my-rating" id="leadersMyRating"></div>
+
+                                <div class="leaders-list" id="leadersList"></div>
+                            </div>
                         </div>
 
                         <div class="chef-tab-content" data-chef-content="notifications">
@@ -534,8 +571,49 @@
 
                         <div class="chef-tab-content" data-chef-content="settings">
                             <div class="chef-section">
-                                <h2>⚙️ Настройки</h2>
-                                <p class="muted">Здесь будут настройки профиля (скоро)</p>
+                                <h2>⚙️ Настройки профиля</h2>
+
+                                <div class="settings-group">
+                                    <p></p>
+                                    <h3>Приватность</h3>
+                                    <p class="muted">Выбери, кто может видеть твой профиль, рецепты и друзей</p>
+
+                                    <div class="settings-row">
+                                        <div class="settings-label">
+                                            <b>Кто видит мои рецепты</b>
+                                            <small>Другие пользователи смогут зайти в твоё избранное</small>
+                                        </div>
+                                        <div class="settings-toggle-group" data-privacy-toggle="recipes">
+                                            <button type="button" class="settings-toggle-btn active"
+                                                data-value="friends">Друзья</button>
+                                            <button type="button" class="settings-toggle-btn" data-value="all">
+                                                Все</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-row">
+                                        <div class="settings-label">
+                                            <b>Кто видит моих друзей</b>
+                                            <small>Другие увидят список твоих друзей в профиле</small>
+                                        </div>
+                                        <div class="settings-toggle-group" data-privacy-toggle="friends">
+                                            <button type="button" class="settings-toggle-btn active"
+                                                data-value="friends">Друзья</button>
+                                            <button type="button" class="settings-toggle-btn" data-value="all">
+                                                Все</button>
+                                        </div>
+                                    </div>
+                                    <div class="settings-row">
+                                        <div class="settings-label">
+                                            <b>Скрыть профиль из поиска</b>
+                                            <small>Тебя не найдут по нику другие пользователи</small>
+                                        </div>
+                                        <label class="settings-switch">
+                                            <input type="checkbox" id="privacyHidden">
+                                            <span class="settings-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                             <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
                         </div>
@@ -726,7 +804,6 @@
                         <div class="chef-hero-info">
                             <h1 class="chef-name" id="friendName">—</h1>
                             <p class="chef-realname" id="friendNickDisplay">—</p>
-                            <p class="chef-bio">📅 С нами с <span id="friendDate">—</span></p>
                         </div>
                         <div class="chef-title-badge hidden" id="friendTitleBadge">
                             <span id="friendTitleText">—</span>
