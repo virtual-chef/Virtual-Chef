@@ -3483,7 +3483,8 @@ function getAchievementProgress(id) {
 
     const stats = user.stats || {};
     const favCount = favorites.length;
-    const stars = getStars();
+    const starsBig = getStars();
+    const stars = Number(starsBig > 10000n ? 10000n : starsBig);
     const framesCount = (typeof userFrames !== "undefined" && userFrames.owned)
         ? userFrames.owned.length
         : 0;
@@ -3644,8 +3645,8 @@ function checkAchievements() {
     if (user.stats.fridgeSearches >= 10) unlockAchievement(user, "fridge_10");
     if (daysOnSite(user) >= 30) unlockAchievement(user, "month_1");
 
-    if (getStars() >= 1000) unlockAchievement(user, "rich_1");
-    if (getStars() >= 10000) unlockAchievement(user, "rich_10");
+    if (getStars() >= 1000n) unlockAchievement(user, "rich_1");
+    if (getStars() >= 10000n) unlockAchievement(user, "rich_10");
 
     const framesCount = (typeof userFrames !== "undefined" && userFrames.owned)
         ? userFrames.owned.length
@@ -3892,7 +3893,7 @@ registerForm?.addEventListener("submit", async e => {
             try {
                 const { db, doc, setDoc } = window.firebaseDB;
                 await setDoc(doc(db, "users", email), {
-                    email, name, nick, stars: 0,
+                    email, name, nick, stars: "0", starsIsBigInt: true,
                     registered: Date.now(), created: Date.now(),
                     achievements: ["first_step"]
                 });
@@ -3961,6 +3962,7 @@ document.querySelector("#logoutBtn")?.addEventListener("click", async () => {
 setInterval(async () => {
     if (currentUser()) {
         await checkMyBanStatus();
+        await loadStarsFromCloud();
     }
 }, 30000);
 
@@ -4073,7 +4075,7 @@ async function loadStarsFromCloud() {
         const snap = await getDoc(ref);
         if (snap.exists()) {
             const data = snap.data();
-            const cloudStars = data.stars || 0;
+            const cloudStars = data.stars ?? 0;
             localStorage.setItem("vc_stars", String(cloudStars));
             if (data.registered) {
                 localStorage.setItem("vc_user_registered", data.registered);
@@ -4082,10 +4084,11 @@ async function loadStarsFromCloud() {
                 localStorage.setItem("vc_user_nick", data.nick);
             }
         } else {
-            const localStars = parseInt(localStorage.getItem("vc_stars") || "0");
+            const localStars = localStorage.getItem("vc_stars") || "0";
             await setDoc(ref, {
                 email: user.email, name: user.name,
-                stars: localStars, registered: user.registered, created: Date.now()
+                stars: String(localStars), starsIsBigInt: true,
+                registered: user.registered, created: Date.now()
             });
         }
         updateStarsBalance();
@@ -4095,11 +4098,18 @@ async function loadStarsFromCloud() {
 }
 
 async function saveStarsToCloud(value) {
-    let safeValue = Number(value);
-    if (!isFinite(safeValue) || isNaN(safeValue) || safeValue < 0) safeValue = 0;
-    safeValue = Math.min(Math.floor(safeValue), MAX_STARS);
+    let safeValue;
+    try {
+        safeValue = BigInt(value);
+    } catch (e) {
+        safeValue = 0n;
+    }
+    if (safeValue < 0n) safeValue = 0n;
+    const max = getMaxStars();
+    if (safeValue > max) safeValue = max;
 
-    localStorage.setItem("vc_stars", String(safeValue));
+    const strValue = safeValue.toString();
+    localStorage.setItem("vc_stars", strValue);
     updateStarsBalance();
     if (!window.firebaseDB) return;
     const user = currentUser();
@@ -4107,7 +4117,7 @@ async function saveStarsToCloud(value) {
     try {
         const { db, doc, setDoc } = window.firebaseDB;
         const ref = doc(db, "users", user.email);
-        await setDoc(ref, { stars: safeValue }, { merge: true });
+        await setDoc(ref, { stars: strValue, starsIsBigInt: true }, { merge: true });
     } catch (e) {
         console.error("Ошибка сохранения:", e);
     }
@@ -4137,24 +4147,92 @@ function saveClaimed(obj) {
     localStorage.setItem("vc_claimed_days", JSON.stringify(obj));
 }
 
-const MAX_STARS = 1e15;
+/* ================= БОЛЬШИЕ ЧИСЛА (BigInt) ================= */
+
+const LARGE_NUMBERS = [
+    { exp: 3, short: "К", full: "тыс." },
+    { exp: 6, short: "МЛН", full: "млн" },
+    { exp: 9, short: "МЛРД", full: "млрд" },
+    { exp: 12, short: "ТРЛН", full: "трлн" },
+    { exp: 15, short: "КВДР", full: "квдрлн" },
+    { exp: 18, short: "КВНТЛН", full: "квнтлн" },
+    { exp: 21, short: "СКСТЛН", full: "скстлн" },
+    { exp: 24, short: "СПТЛН", full: "сптлн" },
+    { exp: 27, short: "ОКТЛН", full: "октлн" },
+    { exp: 30, short: "ННЛН", full: "ннлн" },
+    { exp: 33, short: "ДЦЛН", full: "дцлн" },
+    { exp: 36, short: "УНДЦЛН", full: "ундцлн" },
+    { exp: 39, short: "ДДЦЛН", full: "ддцлн" },
+    { exp: 42, short: "ТРДЦЛН", full: "трдцлн" },
+    { exp: 45, short: "КВТДЦЛН", full: "квтдцлн" },
+    { exp: 48, short: "ВКНДЦЛН", full: "вкндцлн" },
+    { exp: 51, short: "СКСДЦЛН", full: "сксдцлн" },
+    { exp: 54, short: "СПТДЦЛН", full: "сптдцлн" },
+    { exp: 57, short: "ОКТДЦЛН", full: "октдцлн" },
+    { exp: 60, short: "НВМДЦЛН", full: "нвмдцлн" },
+    { exp: 63, short: "ВГНТЛН", full: "вгнтлн" },
+    { exp: 66, short: "УНВГНТЛН", full: "унвгнтлн" },
+    { exp: 69, short: "ДВГНТЛН", full: "двгнтлн" },
+    { exp: 72, short: "ТРВГНТЛН", full: "трвгнтлн" },
+    { exp: 75, short: "КВТВГНТЛН", full: "квтвгнтлн" },
+    { exp: 78, short: "КВНВГНТЛН", full: "квнвгнтлн" },
+    { exp: 81, short: "СКСВГНТЛН", full: "сксвгнтлн" },
+    { exp: 84, short: "СПТВГНТЛН", full: "сптвгнтлн" },
+    { exp: 87, short: "ОКТВГНТЛН", full: "октвгнтлн" },
+    { exp: 90, short: "НВМВГНТЛН", full: "нвмвгнтлн" },
+    { exp: 93, short: "ТРГНТЛН", full: "тргнтлн" },
+];
+
+const MAX_STARS_EXP = 96;
+
+function bigIntPow(base, exp) {
+    let result = 1n;
+    const b = BigInt(base);
+    for (let i = 0; i < exp; i++) result *= b;
+    return result;
+}
+
+function getMaxStars() {
+    return bigIntPow(10, MAX_STARS_EXP);
+}
 
 function getStars() {
     const raw = localStorage.getItem("vc_stars") || "0";
-    const val = Number(raw);
-    if (!isFinite(val) || isNaN(val) || val < 0) return 0;
-    return Math.min(Math.floor(val), MAX_STARS);
+    try {
+        let val = BigInt(raw);
+        if (val < 0n) val = 0n;
+        const max = getMaxStars();
+        if (val > max) val = max;
+        return val;
+    } catch (e) {
+        return 0n;
+    }
 }
 
 function formatBigNumber(num) {
-    num = Math.floor(num);
-    if (!isFinite(num)) return "0";
-    if (num >= 1e15) return "1 КВДР";
-    if (num >= 1e12) return (num / 1e12).toFixed(2) + " ТРЛН";
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + " МЛРД";
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + " МЛН";
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + " К";
-    return String(num);
+    let val;
+    try {
+        val = BigInt(num);
+    } catch (e) {
+        return "0";
+    }
+    if (val < 0n) val = 0n;
+
+    if (val < 1000n) return val.toString();
+
+    for (let i = LARGE_NUMBERS.length - 1; i >= 0; i--) {
+        const item = LARGE_NUMBERS[i];
+        const divisor = bigIntPow(10, item.exp);
+        if (val >= divisor) {
+            const intPart = val / divisor;
+            const remainder = val % divisor;
+            const divisorForDecimal = bigIntPow(10, item.exp - 2);
+            const decimalPart = Number(remainder / divisorForDecimal);
+            const decimalStr = decimalPart.toString().padStart(2, "0");
+            return `${intPart.toString()}.${decimalStr} ${item.short}`;
+        }
+    }
+    return val.toString();
 }
 
 function updateStarsBalance() {
@@ -4262,7 +4340,7 @@ function renderRewards() {
     const balanceEl = document.querySelector("#rewardsBalance");
     const monthEl = document.querySelector("#rewardsMonthTotal");
     const streakEl = document.querySelector("#rewardsStreak");
-    if (balanceEl) balanceEl.textContent = getStars();
+    if (balanceEl) balanceEl.textContent = formatBigNumber(getStars());
     if (monthEl) monthEl.textContent = monthTotal;
     if (streakEl) streakEl.textContent = countStreak();
 }
@@ -4272,9 +4350,9 @@ function claimDay(key, reward) {
     if (claimed[key]) return;
     claimed[key] = reward;
     saveClaimed(claimed);
-    const newTotal = getStars() + reward;
+    const newTotal = getStars() + BigInt(reward);
     saveStarsToCloud(newTotal);
-    showToast(`⭐ +${reward} звёзд! Баланс: ${newTotal}`);
+    showToast(`⭐ +${reward} звёзд! Баланс: ${formatBigNumber(newTotal)}`);
     renderRewards();
 }
 
@@ -4544,7 +4622,7 @@ document.querySelector("#shopBtn")?.addEventListener("click", () => {
 
 function updateShopBalance() {
     const el = document.querySelector("#shopBalance");
-    if (el) el.textContent = getStars();
+    if (el) el.textContent = formatBigNumber(getStars());
 }
 
 async function loadFramesFromCloud() {
@@ -4719,7 +4797,7 @@ function renderFramesGrid() {
         const isOwned = userFrames.owned.includes(frame.id);
         const isActive = userFrames.active === frame.id;
         const isNone = frame.id === "none";
-        const canAfford = stars >= frame.price;
+        const canAfford = stars >= BigInt(frame.price);
         let btnText = "Купить";
         let btnClass = "";
         let disabled = "";
@@ -4838,11 +4916,11 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
 
         if (action === "buy") {
             const stars = getStars();
-            if (stars < frame.price) {
+            if (stars < BigInt(frame.price)) {
                 showToast("❌ Недостаточно звёзд");
                 return;
             }
-            const newBalance = stars - frame.price;
+            const newBalance = stars - BigInt(frame.price);
             await saveStarsToCloud(newBalance);
             userFrames.owned.push(frameId);
             userFrames.active = frameId;
@@ -5478,7 +5556,7 @@ async function renderFriends() {
                 <div class="${avatarCls}">${avatarHTML}</div>
                 <div class="info">
                     <b>${f.name || "Без имени"}</b>
-                    <small>@${f.nick || "без_ника"} · ⭐ ${f.stars || 0} · 🏆 ${f.achievements?.length || 0}</small>
+                    <small>@${f.nick || "без_ника"} · ⭐ ${formatBigNumber(f.stars || 0)} · 🏆 ${f.achievements?.length || 0}</small>
                 </div>
                 <div class="actions">
                     <button class="btn-profile" data-view-friend="${friendEmail}">👤 Профиль</button>
@@ -5528,13 +5606,20 @@ async function giveStarsToFriend(email, amount) {
     const me = currentUser();
     if (!me || !window.firebaseDB) return;
 
-    const amountNum = parseInt(amount);
-    if (!amountNum || amountNum < 1) {
+    let amountBig;
+    try {
+        amountBig = BigInt(amount);
+    } catch (e) {
+        showToast("❌ Введи корректное число");
+        return;
+    }
+
+    if (amountBig < 1n) {
         showToast("❌ Введи число больше 0");
         return;
     }
 
-    if (getStars() < amountNum) {
+    if (getStars() < amountBig) {
         showToast("❌ Недостаточно звёзд");
         return;
     }
@@ -5542,17 +5627,26 @@ async function giveStarsToFriend(email, amount) {
     try {
         const { db, doc, getDoc, setDoc } = window.firebaseDB;
 
-        await saveStarsToCloud(getStars() - amountNum);
+        await saveStarsToCloud(getStars() - amountBig);
 
         const hisRef = doc(db, "users", email);
         const hisSnap = await getDoc(hisRef);
-        const hisStars = hisSnap.data()?.stars || 0;
-        await setDoc(hisRef, { stars: hisStars + amountNum }, { merge: true });
+        let hisStars;
+        try {
+            hisStars = BigInt(hisSnap.data()?.stars || 0);
+        } catch (e) {
+            hisStars = 0n;
+        }
+        const newHisStars = hisStars + amountBig;
+        await setDoc(hisRef, {
+            stars: newHisStars.toString(),
+            starsIsBigInt: true
+        }, { merge: true });
 
-        addGiftedStars(amountNum);
+        addGiftedStars(Number(amountBig));
         checkAchievements();
 
-        showToast(`🎁 Подарено ${amountNum} ⭐!`);
+        showToast(`🎁 Подарено ${formatBigNumber(amountBig)} ⭐!`);
         modal.classList.add("hidden");
     } catch (e) {
         console.error("Ошибка подарка:", e);
@@ -5969,8 +6063,15 @@ async function openFriendPage(friend) {
     const giftInput = document.querySelector("#friendGiftAmount");
     if (giftBtn && giftInput) {
         giftBtn.onclick = async () => {
-            const amount = parseInt(giftInput.value);
-            if (!amount || amount < 1) {
+            const raw = giftInput.value.trim();
+            let amount;
+            try {
+                amount = BigInt(raw);
+            } catch (e) {
+                showToast("❌ Введи корректное число");
+                return;
+            }
+            if (amount < 1n) {
                 showToast("❌ Введи число больше 0");
                 return;
             }
@@ -6388,14 +6489,14 @@ async function findPromoInCloud(code) {
 }
 
 function parsePromoReward(raw) {
-    const result = { stars: 0, exp: 0, spins: 0 };
+    const result = { stars: "0", exp: 0, spins: 0 };
     if (!raw) return result;
 
     const starMatch = raw.match(/\$(\d+)/);
     const expMatch = raw.match(/&(\d+)/);
     const spinMatch = raw.match(/#(\d+)/);
 
-    if (starMatch) result.stars = parseInt(starMatch[1]) || 0;
+    if (starMatch) result.stars = starMatch[1] || "0";
     if (expMatch) result.exp = parseInt(expMatch[1]) || 0;
     if (spinMatch) result.spins = parseInt(spinMatch[1]) || 0;
 
@@ -6404,7 +6505,8 @@ function parsePromoReward(raw) {
 
 function formatPromoRewards(promo) {
     const parts = [];
-    if (promo.stars > 0) parts.push(`+${promo.stars} ⭐`);
+    const starsStr = String(promo.stars || "0");
+    if (starsStr !== "0") parts.push(`+${formatBigNumber(promo.stars)} ⭐`);
     if (promo.exp > 0) parts.push(`+${promo.exp} exp`);
     if (promo.spins > 0) parts.push(`+${promo.spins} 🎰`);
     return parts;
@@ -6460,8 +6562,8 @@ async function activatePromo(codeRaw) {
     try {
         const { db, doc, setDoc, arrayUnion, updateDoc } = window.firebaseDB;
 
-        if (promo.stars > 0) {
-            const newBalance = getStars() + promo.stars;
+        if (promo.stars && BigInt(promo.stars) > 0n) {
+            const newBalance = getStars() + BigInt(promo.stars);
             await saveStarsToCloud(newBalance);
         }
 
@@ -6527,7 +6629,8 @@ async function renderPromoHistory() {
         <div class="promo-history-title">История активаций</div>
         ${sorted.map(u => {
         const rewards = [];
-        if (u.stars > 0) rewards.push(`+${u.stars} ⭐`);
+        const starsStr = String(u.stars || "0");
+        if (starsStr !== "0") rewards.push(`+${formatBigNumber(u.stars)} ⭐`);
         if (u.exp > 0) rewards.push(`+${u.exp} exp`);
         if (u.spins > 0) rewards.push(`+${u.spins} 🎰`);
         return `
@@ -6605,9 +6708,17 @@ async function adminGiveStars() {
     if (!user || !isAdminUser(user.email)) return;
 
     const query = document.querySelector("#adminTargetUser").value.trim();
-    const amount = Number(document.querySelector("#adminAmount").value);
+    const rawAmount = document.querySelector("#adminAmount").value.trim();
 
-    if (!query || !amount || amount < 1) {
+    let amount;
+    try {
+        amount = BigInt(rawAmount);
+    } catch (e) {
+        showToast("❌ Некорректное число");
+        return;
+    }
+
+    if (!query || amount < 1n) {
         showToast("❌ Заполни оба поля");
         return;
     }
@@ -6621,12 +6732,21 @@ async function adminGiveStars() {
     if (target.email === user.email) {
         const newTotal = getStars() + amount;
         await saveStarsToCloud(newTotal);
-        showToast(`👑 +${amount} ⭐ начислено вам!`);
+        showToast(`👑 +${formatBigNumber(amount)} ⭐ начислено вам!`);
     } else {
         const { db, doc, setDoc } = window.firebaseDB;
-        const current = target.stars || 0;
-        await setDoc(doc(db, "users", target.email), { stars: current + amount }, { merge: true });
-        showToast(`✅ +${amount} ⭐ → ${target.name || target.email}`);
+        let current;
+        try {
+            current = BigInt(target.stars || 0);
+        } catch (e) {
+            current = 0n;
+        }
+        const newTotal = current + amount;
+        await setDoc(doc(db, "users", target.email), {
+            stars: newTotal.toString(),
+            starsIsBigInt: true
+        }, { merge: true });
+        showToast(`✅ +${formatBigNumber(amount)} ⭐ → ${target.name || target.email}`);
     }
 
     document.querySelector("#adminTargetUser").value = "";
@@ -6654,12 +6774,13 @@ async function adminTakeStars() {
     if (target.email === user.email) {
         const newTotal = Math.max(0, getStars() - amount);
         await saveStarsToCloud(newTotal);
-        showToast(`💀 -${amount} ⭐ списано`);
+        showToast(`💀 -${formatBigNumber(amount)} ⭐ списано`);
     } else {
         const { db, doc, setDoc } = window.firebaseDB;
-        const current = target.stars || 0;
-        await setDoc(doc(db, "users", target.email), { stars: Math.max(0, current - amount) }, { merge: true });
-        showToast(`💀 -${amount} ⭐ → ${target.name || target.email}`);
+        const current = Number(target.stars) || 0;
+        const newTotal = Math.max(0, current - amount);
+        await setDoc(doc(db, "users", target.email), { stars: newTotal }, { merge: true });
+        showToast(`💀 -${formatBigNumber(amount)} ⭐ → ${target.name || target.email}`);
     }
 
     document.querySelector("#adminTakeUser").value = "";
@@ -6953,7 +7074,10 @@ async function adminCreatePromo() {
     }
 
     const rewards = parsePromoReward(rewardRaw);
-    if (!rewards.stars && !rewards.exp && !rewards.spins) {
+    const hasStars = rewards.stars && rewards.stars !== "0";
+    const hasExp = rewards.exp > 0;
+    const hasSpins = rewards.spins > 0;
+    if (!hasStars && !hasExp && !hasSpins) {
         showToast("❌ Награда пустая (нужен $, & или #)");
         return;
     }
@@ -7049,6 +7173,16 @@ document.querySelectorAll("[data-quick-exp]").forEach(btn => {
         const input = document.querySelector("#adminGiveExpAmount");
         if (input) {
             input.value = btn.dataset.quickExp;
+            input.focus();
+        }
+    });
+});
+
+document.querySelectorAll("[data-quick-give]").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const input = document.querySelector("#adminAmount");
+        if (input) {
+            input.value = btn.dataset.quickGive;
             input.focus();
         }
     });
@@ -7229,39 +7363,9 @@ async function renderWheel() {
     }
 
     const balanceEl = document.querySelector("#wheelBalance");
-    if (balanceEl) balanceEl.textContent = getStars().toLocaleString("ru-RU");
+    if (balanceEl) balanceEl.textContent = formatBigNumber(getStars());
 
     await updateWheelFreeSpinsUI();
-}
-
-async function updateWheelFreeSpinsUI() {
-    const user = currentUser();
-    const freeSpins = user ? await getSpinTickets() : 0;
-
-    const card = document.querySelector("#wheelFreeSpinsCard");
-    const numEl = document.querySelector("#wheelFreeSpins");
-    const btnText = document.querySelector("#wheelSpinBtnText");
-    const centerSub = document.querySelector("#wheelCenterSubtext");
-    const sideBtn = document.querySelector("#wheelSpinBtn");
-
-    if (card && numEl) {
-        if (freeSpins > 0) {
-            card.style.display = "flex";
-            numEl.textContent = freeSpins;
-        } else {
-            card.style.display = "none";
-        }
-    }
-
-    if (freeSpins > 0) {
-        if (btnText) btnText.textContent = `Крутить бесплатно (${freeSpins})`;
-        if (centerSub) centerSub.textContent = `Бесплатно · ${freeSpins} 🎰`;
-        if (sideBtn) sideBtn.classList.add("free-spin");
-    } else {
-        if (btnText) btnText.textContent = "Крутить за 1 000 звёзд";
-        if (centerSub) centerSub.textContent = "1 000 звёзд";
-        if (sideBtn) sideBtn.classList.remove("free-spin");
-    }
 }
 
 async function updateWheelFreeSpinsUI() {
@@ -7326,7 +7430,7 @@ async function spinWheel() {
 
     if (!useFreeSpin) {
         const stars = getStars();
-        if (stars < WHEEL_SPIN_COST) {
+        if (stars < BigInt(WHEEL_SPIN_COST)) {
             showToast(`❌ Нужно ${WHEEL_SPIN_COST} ⭐`);
             return;
         }
@@ -7359,11 +7463,11 @@ async function spinWheel() {
         await addSpinTickets(-1);
         showToast(`🎰 Бесплатная крутка! Осталось: ${freeSpins - 1}`);
     } else {
-        await saveStarsToCloud(getStars() - WHEEL_SPIN_COST);
+        await saveStarsToCloud(getStars() - BigInt(WHEEL_SPIN_COST));
     }
 
     setTimeout(async () => {
-        const newBalance = getStars() + prize.stars;
+        const newBalance = getStars() + BigInt(prize.stars);
         await saveStarsToCloud(newBalance);
 
         data.totalSpins++;
@@ -7448,7 +7552,12 @@ async function getFriendsList() {
 
 function getLeaderStats(user) {
     const exp = user.exp || 0;
-    const stars = user.stars || 0;
+    let stars;
+    try {
+        stars = BigInt(user.stars || 0);
+    } catch (e) {
+        stars = 0n;
+    }
     const level = getLevelFromExp(exp);
     return { exp, stars, level };
 }
@@ -7511,7 +7620,14 @@ async function loadLeadersData() {
     users.sort((a, b) => {
         const sa = getLeaderStats(a);
         const sb = getLeaderStats(b);
-        if (leadersSort === "stars") return (sb.stars || 0) - (sa.stars || 0);
+        if (leadersSort === "stars") {
+            let saStars, sbStars;
+            try { saStars = BigInt(sa.stars || 0); } catch (e) { saStars = 0n; }
+            try { sbStars = BigInt(sb.stars || 0); } catch (e) { sbStars = 0n; }
+            if (sbStars > saStars) return 1;
+            if (sbStars < saStars) return -1;
+            return 0;
+        }
         if (leadersSort === "level") return (sb.level || 0) - (sa.level || 0);
         return (sb.exp || 0) - (sa.exp || 0);
     });
@@ -7538,7 +7654,7 @@ function renderLeaderRow(user, place, isMe) {
             </div>
             <div class="leader-stats">
                 <div class="leader-stat">
-                    <b>${stats.stars.toLocaleString("ru-RU")}</b>
+                    <b>${formatBigNumber(stats.stars)}</b>
                     <small>⭐ звёзд</small>
                 </div>
                 <div class="leader-stat">
