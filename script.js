@@ -4369,7 +4369,15 @@ async function loadStarsFromCloud() {
         if (snap.exists()) {
             const data = snap.data();
             const cloudStars = data.stars ?? 0;
-            localStorage.setItem("vc_stars", String(cloudStars));
+            let safeStars;
+            try {
+                const raw = data.stars;
+                safeStars = typeof raw === "number" ? Math.trunc(raw).toString() : (raw || "0");
+                BigInt(safeStars);
+            } catch (e) {
+                safeStars = "0";
+            }
+            localStorage.setItem("vc_stars", safeStars);
             if (data.registered) {
                 localStorage.setItem("vc_user_registered", data.registered);
             }
@@ -5924,9 +5932,10 @@ async function giveStarsToFriend(email, amount) {
 
         const hisRef = doc(db, "users", email);
         const hisSnap = await getDoc(hisRef);
-        let hisStars;
+        let hisStars = 0n;
         try {
-            hisStars = BigInt(hisSnap.data()?.stars || 0);
+            const raw = hisSnap.data()?.stars;
+            hisStars = BigInt(typeof raw === "number" ? Math.trunc(raw) : (raw || 0));
         } catch (e) {
             hisStars = 0n;
         }
@@ -7022,15 +7031,25 @@ async function adminGiveStars() {
         return;
     }
 
+    const { db, doc, getDoc, setDoc } = window.firebaseDB;
+
     if (target.email === user.email) {
-        const newTotal = getStars() + amount;
+        const snap = await getDoc(doc(db, "users", user.email));
+        let current = 0n;
+        try {
+            current = BigInt(snap.data()?.stars || 0);
+        } catch (e) {
+            current = 0n;
+        }
+        const newTotal = current + amount;
         await saveStarsToCloud(newTotal);
         showToast(`👑 +${formatBigNumber(amount)} ⭐ начислено вам!`);
     } else {
-        const { db, doc, setDoc } = window.firebaseDB;
-        let current;
+        const snap = await getDoc(doc(db, "users", target.email));
+        let current = 0n;
         try {
-            current = BigInt(target.stars || 0);
+            const raw = snap.data()?.stars;
+            current = BigInt(typeof raw === "number" ? Math.trunc(raw) : (raw || 0));
         } catch (e) {
             current = 0n;
         }
@@ -7051,9 +7070,17 @@ async function adminTakeStars() {
     if (!user || !isAdminUser(user.email)) return;
 
     const query = document.querySelector("#adminTakeUser").value.trim();
-    const amount = Number(document.querySelector("#adminTakeAmount").value);
+    const rawAmount = document.querySelector("#adminTakeAmount").value.trim();
 
-    if (!query || !amount || amount < 1) {
+    let amount;
+    try {
+        amount = BigInt(rawAmount);
+    } catch (e) {
+        showToast("❌ Некорректное число");
+        return;
+    }
+
+    if (!query || amount < 1n) {
         showToast("❌ Заполни оба поля");
         return;
     }
@@ -7064,15 +7091,33 @@ async function adminTakeStars() {
         return;
     }
 
+    const { db, doc, getDoc, setDoc } = window.firebaseDB;
+
     if (target.email === user.email) {
-        const newTotal = Math.max(0, getStars() - amount);
+        const snap = await getDoc(doc(db, "users", user.email));
+        let current = 0n;
+        try {
+            current = BigInt(snap.data()?.stars || 0);
+        } catch (e) {
+            current = 0n;
+        }
+        const newTotal = current > amount ? current - amount : 0n;
         await saveStarsToCloud(newTotal);
         showToast(`💀 -${formatBigNumber(amount)} ⭐ списано`);
     } else {
-        const { db, doc, setDoc } = window.firebaseDB;
-        const current = Number(target.stars) || 0;
-        const newTotal = Math.max(0, current - amount);
-        await setDoc(doc(db, "users", target.email), { stars: newTotal }, { merge: true });
+        const snap = await getDoc(doc(db, "users", target.email));
+        let current = 0n;
+        try {
+            const raw = snap.data()?.stars;
+            current = BigInt(typeof raw === "number" ? Math.trunc(raw) : (raw || 0));
+        } catch (e) {
+            current = 0n;
+        }
+        const newTotal = current > amount ? current - amount : 0n;
+        await setDoc(doc(db, "users", target.email), {
+            stars: newTotal.toString(),
+            starsIsBigInt: true
+        }, { merge: true });
         showToast(`💀 -${formatBigNumber(amount)} ⭐ → ${target.name || target.email}`);
     }
 
@@ -7098,8 +7143,9 @@ async function adminGiveExp() {
         return;
     }
 
-    const { db, doc, setDoc } = window.firebaseDB;
-    const current = target.exp || 0;
+    const { db, doc, getDoc, setDoc } = window.firebaseDB;
+    const snap = await getDoc(doc(db, "users", target.email));
+    const current = Number(snap.data()?.exp || 0) || 0;
     await setDoc(doc(db, "users", target.email), { exp: current + amount }, { merge: true });
 
     showToast(`⚡ +${amount} exp → ${target.name || target.email}`);
@@ -7131,8 +7177,9 @@ async function adminTakeExp() {
         return;
     }
 
-    const { db, doc, setDoc } = window.firebaseDB;
-    const current = target.exp || 0;
+    const { db, doc, getDoc, setDoc } = window.firebaseDB;
+    const snap = await getDoc(doc(db, "users", target.email));
+    const current = Number(snap.data()?.exp || 0) || 0;
     const newExp = Math.max(0, current - amount);
     await setDoc(doc(db, "users", target.email), { exp: newExp }, { merge: true });
 
@@ -7740,7 +7787,10 @@ async function spinWheel() {
     const sectorAngle = 360 / WHEEL_PRIZES.length;
     const targetAngle = 360 - (prizeIndex * sectorAngle + sectorAngle / 2);
     const fullTurns = 5 * 360;
-    const finalRotation = wheelRotation + fullTurns + (targetAngle - (wheelRotation % 360));
+    const currentMod = ((wheelRotation % 360) + 360) % 360;
+    let delta = targetAngle - currentMod;
+    if (delta < 0) delta += 360;
+    const finalRotation = wheelRotation + fullTurns + delta;
 
     const wheelEl = document.querySelector("#wheel");
     if (wheelEl) {
