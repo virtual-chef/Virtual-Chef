@@ -639,39 +639,34 @@
                                 <h2>⚙️ Настройки профиля</h2>
 
                                 <div class="settings-group">
-                                    <p></p>
                                     <h3>Приватность</h3>
-                                    <p class="muted">Выбери, кто может видеть твой профиль, рецепты и друзей</p>
 
                                     <div class="settings-row">
                                         <div class="settings-label">
                                             <b>Кто видит мои рецепты</b>
-                                            <small>Другие пользователи смогут зайти в твоё избранное</small>
+                                            <small>Выбери, кто может просматривать твои рецепты</small>
                                         </div>
                                         <div class="settings-toggle-group" data-privacy-toggle="recipes">
-                                            <button type="button" class="settings-toggle-btn active"
-                                                data-value="friends">Друзья</button>
-                                            <button type="button" class="settings-toggle-btn" data-value="all">
-                                                Все</button>
+                                            <button class="settings-toggle-btn" data-value="friends">Друзья</button>
+                                            <button class="settings-toggle-btn" data-value="all">Все</button>
                                         </div>
                                     </div>
 
                                     <div class="settings-row">
                                         <div class="settings-label">
                                             <b>Кто видит моих друзей</b>
-                                            <small>Другие увидят список твоих друзей в профиле</small>
+                                            <small>Выбери, кто может просматривать список твоих друзей</small>
                                         </div>
                                         <div class="settings-toggle-group" data-privacy-toggle="friends">
-                                            <button type="button" class="settings-toggle-btn active"
-                                                data-value="friends">Друзья</button>
-                                            <button type="button" class="settings-toggle-btn" data-value="all">
-                                                Все</button>
+                                            <button class="settings-toggle-btn" data-value="friends">Друзья</button>
+                                            <button class="settings-toggle-btn" data-value="all">Все</button>
                                         </div>
                                     </div>
+
                                     <div class="settings-row">
                                         <div class="settings-label">
                                             <b>Скрыть профиль из поиска</b>
-                                            <small>Тебя не найдут по нику другие пользователи</small>
+                                            <small>Тебя не смогут найти по нику другие пользователи</small>
                                         </div>
                                         <label class="settings-switch">
                                             <input type="checkbox" id="privacyHidden">
@@ -679,8 +674,39 @@
                                         </label>
                                     </div>
                                 </div>
+
+                                <div class="password-group">
+                                    <h3>Пароль</h3>
+                                    <p class="muted">После смены остальные устройства выйдут из аккаунта, на почту
+                                        придёт уведомление</p>
+
+                                    <form id="changePasswordForm" class="password-form">
+                                        <div class="password-row">
+                                            <div class="password-field">
+                                                <label>Текущий пароль</label>
+                                                <input type="password" id="currentPassword"
+                                                    placeholder="Введи текущий пароль" autocomplete="current-password"
+                                                    required>
+                                            </div>
+                                            <div class="password-field">
+                                                <label>Новый пароль</label>
+                                                <input type="password" id="newPassword"
+                                                    placeholder="Не короче 10 символов" autocomplete="new-password"
+                                                    minlength="10" required>
+                                            </div>
+                                            <button type="submit" class="password-submit-btn"
+                                                id="changePasswordBtn">Сменить</button>
+                                        </div>
+                                        <p class="password-error" id="passwordError"></p>
+                                        <p class="password-success" id="passwordSuccess"></p>
+                                    </form>
+                                </div>
+
+                                <div class="account-actions">
+                                    <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
+                                    <button class="delete-account-btn" id="deleteAccountBtn">🗑 Удалить аккаунт</button>
+                                </div>
                             </div>
-                            <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
                         </div>
 
                         <div class="chef-tab-content" data-chef-content="promo">
@@ -689,8 +715,8 @@
                                     <h2>🎟️ Промокоды</h2>
                                     <span class="chef-section-count" id="promoCount">0 активировано</span>
                                 </div>
-                                <p class="muted">Введи промокод и получи звёзды на баланс. Каждый код можно активировать
-                                    только один раз.</p>
+                                <p class="muted">Введи промокод и получи звёзды на баланс. Каждый код можно
+                                    активировать только один раз.</p>
 
                                 <form id="promoForm" class="promo-form">
                                     <input type="text" id="promoInput" placeholder="ВВЕДИ ПРОМОКОД" autocomplete="off"
@@ -703,13 +729,9 @@
                                 <div id="promoHistory" class="promo-history"></div>
                             </div>
                         </div>
-
                     </div>
 
                 </div>
-            </div>
-
-            </div>
 
         </section>
 
@@ -1112,10 +1134,35 @@
         </div>
     </div>
 
+    <div id="deleteAccountModal" class="delete-modal hidden">
+        <div class="delete-modal-box">
+            <div class="delete-modal-icon">⚠️</div>
+            <h2>Удалить аккаунт?</h2>
+            <p class="delete-modal-warning">
+                Это действие <b>нельзя отменить</b>. Будут удалены:
+            </p>
+            <ul class="delete-modal-list">
+                <li>Профиль и все данные</li>
+                <li>Звёзды, достижения, exp</li>
+                <li>Друзья и заявки</li>
+                <li>Твой ник (освободится для других)</li>
+            </ul>
+            <p class="delete-modal-prompt">
+                Введи пароль от аккаунта для подтверждения:
+            </p>
+            <input type="password" id="deleteAccountPassword" placeholder="Пароль" autocomplete="off">
+            <p class="delete-modal-error" id="deleteAccountError"></p>
+            <div class="delete-modal-buttons">
+                <button class="delete-cancel-btn" id="deleteAccountCancel">Отмена</button>
+                <button class="delete-confirm-btn" id="deleteAccountConfirm">🗑 Удалить навсегда</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
         import {
             getFirestore, doc, getDoc, setDoc, updateDoc,
@@ -1157,7 +1204,10 @@
             signInWithEmailAndPassword: signInWithEmailAndPassword,
             signOut: signOut,
             onAuthStateChanged: onAuthStateChanged,
-            updateProfile: updateProfile
+            updateProfile: updateProfile,
+            updatePassword: updatePassword,
+            EmailAuthProvider: EmailAuthProvider,
+            reauthenticateWithCredential: reauthenticateWithCredential
         };
 
         console.log("✅ Firebase подключён");
