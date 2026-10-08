@@ -3959,6 +3959,299 @@ document.querySelector("#logoutBtn")?.addEventListener("click", async () => {
     }
 });
 
+/* ================= УДАЛЕНИЕ АККАУНТА И СМЕНА ПАРОЛЯ ================= */
+
+const passwordForm = document.querySelector("#changePasswordForm");
+const currentPassInput = document.querySelector("#currentPassword");
+const newPassInput = document.querySelector("#newPassword");
+const passwordBtn = document.querySelector("#changePasswordBtn");
+const passwordErrorEl = document.querySelector("#passwordError");
+const passwordSuccessEl = document.querySelector("#passwordSuccess");
+
+function updatePasswordBtnState() {
+    if (!passwordBtn) return;
+    const ok = (currentPassInput?.value || "").length > 0
+        && (newPassInput?.value || "").length >= 10;
+    passwordBtn.disabled = !ok;
+}
+
+currentPassInput?.addEventListener("input", updatePasswordBtnState);
+newPassInput?.addEventListener("input", updatePasswordBtnState);
+
+function setPasswordError(msg) {
+    if (passwordErrorEl) passwordErrorEl.textContent = msg;
+    if (passwordSuccessEl) passwordSuccessEl.textContent = "";
+}
+
+function setPasswordSuccess(msg) {
+    if (passwordSuccessEl) passwordSuccessEl.textContent = msg;
+    if (passwordErrorEl) passwordErrorEl.textContent = "";
+}
+
+passwordForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const user = currentUser();
+    if (!user || !window.firebaseAuth) {
+        setPasswordError("❌ Не залогинен");
+        return;
+    }
+
+    const currentPass = currentPassInput?.value || "";
+    const newPass = newPassInput?.value || "";
+
+    if (!currentPass) {
+        setPasswordError("❌ Введи текущий пароль");
+        return;
+    }
+
+    if (newPass.length < 10) {
+        setPasswordError("❌ Новый пароль должен быть не короче 10 символов");
+        return;
+    }
+
+    if (currentPass === newPass) {
+        setPasswordError("❌ Новый пароль совпадает со старым");
+        return;
+    }
+
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (passwordBtn) {
+        passwordBtn.disabled = true;
+        passwordBtn.textContent = "⏳...";
+    }
+
+    try {
+        const {
+            auth,
+            updatePassword,
+            EmailAuthProvider,
+            reauthenticateWithCredential
+        } = window.firebaseAuth;
+
+        const authUser = auth.currentUser;
+        if (!authUser) {
+            setPasswordError("❌ Сессия истекла, войди заново");
+            return;
+        }
+
+        const credential = EmailAuthProvider.credential(authUser.email, currentPass);
+        try {
+            await reauthenticateWithCredential(authUser, credential);
+        } catch (e) {
+            setPasswordError("❌ Неверный текущий пароль");
+            return;
+        }
+
+        await updatePassword(authUser, newPass);
+
+        setPasswordSuccess("✅ Пароль успешно изменён");
+
+        if (currentPassInput) currentPassInput.value = "";
+        if (newPassInput) newPassInput.value = "";
+
+        showToast("🔐 Пароль изменён!");
+    } catch (e) {
+        console.error("Ошибка смены пароля:", e);
+
+        if (e.code === "auth/requires-recent-login") {
+            setPasswordError("❌ Сессия устарела, войди заново и попробуй снова");
+        } else if (e.code === "auth/weak-password") {
+            setPasswordError("❌ Слишком простой пароль");
+        } else {
+            setPasswordError("❌ Не удалось сменить пароль");
+        }
+    } finally {
+        if (passwordBtn) {
+            passwordBtn.textContent = "Сменить";
+            updatePasswordBtnState();
+        }
+    }
+});
+
+document.querySelector("#deleteAccountBtn")?.addEventListener("click", () => {
+    const modal = document.querySelector("#deleteAccountModal");
+    const passwordInput = document.querySelector("#deleteAccountPassword");
+    const errEl = document.querySelector("#deleteAccountError");
+
+    if (passwordInput) passwordInput.value = "";
+    if (errEl) errEl.textContent = "";
+
+    modal?.classList.remove("hidden");
+
+    setTimeout(() => passwordInput?.focus(), 100);
+});
+
+document.querySelector("#deleteAccountCancel")?.addEventListener("click", () => {
+    document.querySelector("#deleteAccountModal")?.classList.add("hidden");
+});
+
+document.querySelector("#deleteAccountModal")?.addEventListener("click", (e) => {
+    if (e.target.id === "deleteAccountModal") {
+        e.target.classList.add("hidden");
+    }
+});
+
+document.querySelector("#deleteAccountPassword")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        document.querySelector("#deleteAccountConfirm")?.click();
+    }
+});
+
+async function deleteMyAccount() {
+    const user = currentUser();
+    if (!user || !window.firebaseAuth || !window.firebaseDB) {
+        showToast("❌ Не залогинен");
+        return;
+    }
+
+    const passwordInput = document.querySelector("#deleteAccountPassword");
+    const errEl = document.querySelector("#deleteAccountError");
+    const confirmBtn = document.querySelector("#deleteAccountConfirm");
+
+    const password = passwordInput?.value || "";
+
+    const setError = (msg) => {
+        if (errEl) errEl.textContent = msg;
+    };
+
+    if (!password) {
+        setError("❌ Введи пароль");
+        return;
+    }
+
+    setError("");
+
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "⏳ Удаляем...";
+    }
+
+    try {
+        const { db, doc, getDoc, deleteDoc } = window.firebaseDB;
+        const { auth, signInWithEmailAndPassword } = window.firebaseAuth;
+
+        const authUser = auth.currentUser;
+        if (!authUser) {
+            setError("❌ Сессия истекла, войди заново");
+            return;
+        }
+
+        // 1. Проверяем пароль через повторный вход
+        try {
+            await signInWithEmailAndPassword(auth, authUser.email, password);
+        } catch (e) {
+            setError("❌ Неверный пароль");
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = "🗑 Удалить навсегда";
+            }
+            return;
+        }
+
+        const email = authUser.email;
+
+        // 2. Удаляем ник из коллекции nicks
+        try {
+            const nickSnap = await getDoc(doc(db, "nicks", user.nick.toLowerCase()));
+            if (nickSnap.exists() && nickSnap.data().email === email) {
+                await deleteDoc(doc(db, "nicks", user.nick.toLowerCase()));
+            }
+        } catch (e) {
+            console.warn("Не удалось удалить ник:", e);
+        }
+
+        // 3. Удаляем запросы в друзья (входящие и исходящие)
+        try {
+            const { collection, query, where, getDocs } = window.firebaseDB;
+            const q1 = query(collection(db, "friendRequests"), where("to", "==", email));
+            const snap1 = await getDocs(q1);
+            const promises1 = [];
+            snap1.forEach(d => promises1.push(deleteDoc(d.ref)));
+            await Promise.all(promises1);
+
+            const q2 = query(collection(db, "friendRequests"), where("from", "==", email));
+            const snap2 = await getDocs(q2);
+            const promises2 = [];
+            snap2.forEach(d => promises2.push(deleteDoc(d.ref)));
+            await Promise.all(promises2);
+        } catch (e) {
+            console.warn("Не удалось удалить заявки:", e);
+        }
+
+        // 4. Убираем себя из друзей у других пользователей
+        try {
+            const { collection, getDocs, setDoc, arrayRemove } = window.firebaseDB;
+            const allUsersSnap = await getDocs(collection(db, "users"));
+            const friendPromises = [];
+            allUsersSnap.forEach(d => {
+                if (d.id === email) return;
+                const data = d.data();
+                if (data.friends && data.friends.includes(email)) {
+                    friendPromises.push(
+                        setDoc(doc(db, "users", d.id), {
+                            friends: arrayRemove(email)
+                        }, { merge: true })
+                    );
+                }
+            });
+            await Promise.all(friendPromises);
+        } catch (e) {
+            console.warn("Не удалось убрать из друзей:", e);
+        }
+
+        // 5. Удаляем документ пользователя из Firestore
+        try {
+            await deleteDoc(doc(db, "users", email));
+        } catch (e) {
+            console.warn("Не удалось удалить users-документ:", e);
+        }
+
+        // 6. Удаляем аккаунт из Firebase Auth
+        await authUser.delete();
+
+        // 7. Чистим localStorage
+        localStorage.removeItem("vc_user_email");
+        localStorage.removeItem("vc_user_name");
+        localStorage.removeItem("vc_user_nick");
+        localStorage.removeItem("vc_user_registered");
+        localStorage.removeItem("vc_stars");
+        localStorage.removeItem("vc_stats_" + email);
+        localStorage.removeItem("vc_achv_" + email);
+        localStorage.removeItem("vc_exp_" + email);
+        localStorage.removeItem("vc_claimed_days");
+        localStorage.removeItem("vc_friends_count");
+        localStorage.removeItem("vc_gifted_stars");
+        localStorage.removeItem("vc_promos_" + email);
+        localStorage.removeItem("vc_wheel_total_" + email);
+        localStorage.removeItem("vc_wheel_spins_" + email);
+        localStorage.removeItem("vc_wheel_since_" + email);
+        localStorage.removeItem("vc_wheel_nothing_" + email);
+        localStorage.removeItem("vc_wheel_biggest_" + email);
+        localStorage.removeItem("vc_wheel_secret_" + email);
+        localStorage.removeItem("vc_cooked_recipes");
+        localStorage.removeItem("vc_cooked_counts");
+        localStorage.removeItem("favorites");
+
+        document.querySelector("#deleteAccountModal")?.classList.add("hidden");
+
+        showToast("🗑 Аккаунт удалён. Пока-пока!");
+        setTimeout(() => location.reload(), 1500);
+    } catch (e) {
+        console.error("Ошибка удаления:", e);
+        setError("❌ Не удалось удалить аккаунт. Попробуй позже.");
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "🗑 Удалить навсегда";
+        }
+    }
+}
+
+document.querySelector("#deleteAccountConfirm")?.addEventListener("click", deleteMyAccount);
+
 setInterval(async () => {
     if (currentUser()) {
         await checkMyBanStatus();
@@ -5874,7 +6167,7 @@ function initPrivacyControls() {
     document.querySelector("#privacyHidden")?.addEventListener("change", async (e) => {
         userPrivacy.hidden = e.target.checked;
         await savePrivacyToCloud();
-        showToast(userPrivacy.hidden ? "🕵️ Профиль скрыт" : "🌍 Профиль открыт");
+        showToast(userPrivacy.hidden ? "Профиль скрыт" : "Профиль открыт");
     });
 }
 
