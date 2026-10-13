@@ -3307,7 +3307,7 @@ function render(list = recipes) {
 }
 
 function openRecipe(id) {
-    const r = recipes.find(x => x.id === id);
+    const r = findRecipe(id);
     if (!r) return;
     modalContent.innerHTML = `
         <h2>${r.name}</h2>
@@ -3821,6 +3821,7 @@ function renderProfile() {
     updateLevelDisplay();
     renderLevelsRoad();
     applyActiveTitle();
+    applyActiveBanner();
     updateNavAvatar();
 }
 
@@ -4649,11 +4650,13 @@ function renderRewards() {
 function claimDay(key, reward) {
     const claimed = getClaimed();
     if (claimed[key]) return;
-    claimed[key] = reward;
+    const bonus = getTitleBonus();
+    const total = reward + bonus;
+    claimed[key] = total;
     saveClaimed(claimed);
-    const newTotal = getStars() + BigInt(reward);
+    const newTotal = getStars() + BigInt(total);
     saveStarsToCloud(newTotal);
-    showToast(`⭐ +${reward} звёзд! Баланс: ${formatBigNumber(newTotal)}`);
+    showToast(`⭐ +${reward}${bonus ? ` (+${bonus} за титул)` : ""}! Баланс: ${formatBigNumber(newTotal)}`);
     renderRewards();
 }
 
@@ -4732,9 +4735,12 @@ async function initAuthListener() {
             if (typeof loadAvatarsFromCloud === "function") {
                 await loadAvatarsFromCloud();
             }
-            if (typeof loadTitlesFromCloud === "function") {
-                await loadTitlesFromCloud();
+            if (typeof loadBannersFromCloud === "function") {
+                await loadBannersFromCloud();
             }
+            await loadTitlesFromCloud();
+            applyActiveTitle();
+            applyActiveBanner();
             await loadAchievementsFromCloud();
             await loadPrivacyFromCloud();
             updateNavAvatar();
@@ -4796,10 +4802,42 @@ const SHOP_TITLES = [
     { id: "legend", name: "🏆 Легенда", price: 0, text: "🏆 Легенда Шефа", requireLevel: 2800 }
 ];
 
+const SHOP_BANNERS = [
+    { id: "default", name: "Стандартный", price: 0, css: "linear-gradient(135deg, #d91e24 0%, #a81419 100%)" },
+    { id: "sunset", name: "Закат", price: 300, css: "linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)" },
+    { id: "ocean", name: "Океан", price: 300, css: "linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)" },
+    { id: "forest", name: "Лес", price: 400, css: "linear-gradient(135deg, #134e5e 0%, #71b280 100%)" },
+    { id: "night", name: "Ночной город", price: 500, css: "linear-gradient(135deg, #232526 0%, #414345 100%)" },
+    { id: "caramel", name: "Карамель", price: 400, css: "linear-gradient(135deg, #d1913c 0%, #ffd194 100%)" },
+    { id: "fire", name: "Огонь", price: 600, css: "linear-gradient(135deg, #f12711 0%, #f5af19 100%)" },
+    { id: "aurora", name: "Аврора", price: 700, css: "linear-gradient(135deg, #00c6ff 0%, #0072ff 0%, #7b2ff7 100%)" },
+    { id: "gold", name: "Золотой", price: 1000, css: "linear-gradient(135deg, #bf953f 0%, #fcf6ba 50%, #b38728 100%)" }
+];
+
+let userBanners = {
+    owned: ["default"],
+    active: "default"
+};
+
 let userTitles = {
     owned: [],
     active: null
 };
+
+const TITLE_BONUS = {
+    novice: 2,
+    student: 5,
+    amateur: 10,
+    chef: 15,
+    master: 20,
+    virtual: 30,
+    boss: 40,
+    legend: 50
+};
+
+function getTitleBonus() {
+    return TITLE_BONUS[userTitles.active] || 0;
+}
 
 async function loadTitlesFromCloud() {
     if (!window.firebaseDB) return;
@@ -4834,6 +4872,46 @@ async function saveTitlesToCloud() {
         console.error("Ошибка сохранения титулов:", e);
     }
     checkAchievements();
+}
+function renderBannersGrid() {
+    const grid = document.querySelector("#shopGrid");
+    if (!grid) return;
+    const stars = getStars();
+
+    grid.innerHTML = SHOP_BANNERS.map(banner => {
+        const isOwned = userBanners.owned.includes(banner.id);
+        const isActive = userBanners.active === banner.id;
+        const canAfford = stars >= BigInt(banner.price);
+        let btnText = "Купить";
+        let btnClass = "";
+        let disabled = "";
+
+        if (isActive) {
+            btnText = "✓ Активен";
+            btnClass = "active-frame";
+            disabled = "disabled";
+        } else if (isOwned) {
+            btnText = "Применить";
+            btnClass = "owned";
+        } else if (!canAfford) {
+            btnText = "Не хватает ⭐";
+            disabled = "disabled";
+        }
+
+        return `
+            <div class="shop-card">
+                <div style="height:90px;border-radius:10px;margin-bottom:12px;background:${banner.css};background-size:cover;"></div>
+                <h3>${banner.name}</h3>
+                <div class="shop-price">${banner.price} ⭐</div>
+                <button
+                    data-banner="${banner.id}"
+                    data-action="${isActive ? 'none' : (isOwned ? 'apply' : 'buy')}"
+                    class="${btnClass}"
+                    ${disabled}
+                >${btnText}</button>
+            </div>
+        `;
+    }).join("");
 }
 
 function renderTitlesGrid() {
@@ -4881,12 +4959,13 @@ function renderTitlesGrid() {
                 <div class="shop-price" style="font-size:14px;color:#888;">
                     ${title.requireLevel > 0 ? `🔓 Уровень ${title.requireLevel}+` : "—"}
                 </div>
-                <button
-                    data-title="${title.id}"
-                    data-action="${isActive ? 'none' : (isOwned || isNone) ? 'apply' : 'get'}"
-                    class="${btnClass}"
-                    ${disabled}
-                >${btnText}</button>
+                ${TITLE_BONUS[title.id] ? `<div class="shop-title-bonus">+${TITLE_BONUS[title.id]} ⭐ ко всем наградам</div>` : ""}
+<button
+    data-title="${title.id}"
+    data-action="${isActive ? 'none' : (isOwned || isNone) ? 'apply' : 'buy'}"
+    class="${btnClass}"
+    ${disabled}
+>${btnText}</button>
             </div>
         `;
     }).join("");
@@ -4909,10 +4988,56 @@ function applyActiveTitle() {
 window.loadTitlesFromCloud = loadTitlesFromCloud;
 window.applyActiveTitle = applyActiveTitle;
 
+async function loadBannersFromCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        if (snap.exists()) {
+            const data = snap.data();
+            userBanners.owned = data.ownedBanners || ["default"];
+            userBanners.active = data.activeBanner || "default";
+            applyActiveBanner();
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки баннеров:", e);
+    }
+}
+
+async function saveBannersToCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), {
+            ownedBanners: userBanners.owned,
+            activeBanner: userBanners.active
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения баннеров:", e);
+    }
+}
+
+function applyActiveBanner() {
+    const banner = document.querySelector("#profileBanner");
+    if (!banner) return;
+    const found = SHOP_BANNERS.find(b => b.id === userBanners.active) || SHOP_BANNERS[0];
+    banner.style.background = found.css;
+    banner.style.backgroundSize = "cover";
+    banner.style.backgroundPosition = "center";
+}
+
+window.loadBannersFromCloud = loadBannersFromCloud;
+window.applyActiveBanner = applyActiveBanner;
+
 const SHOP_SECTIONS = {
     frames: { icon: "🎨", title: "Рамки" },
     avatars: { icon: "😎", title: "Аватарки" },
-    titles: { icon: "🏆", title: "Титулы" }
+    titles: { icon: "🏆", title: "Титулы" },
+    banners: { icon: "🖼️", title: "Фоны профиля" }
 };
 
 document.querySelector("#shopBtn")?.addEventListener("click", () => {
@@ -5068,6 +5193,10 @@ function renderShopSection(sectionKey) {
         content.classList.add("hidden");
         grid.classList.remove("hidden");
         renderTitlesGrid();
+    } else if (sectionKey === "banners") {
+        content.classList.add("hidden");
+        grid.classList.remove("hidden");
+        renderBannersGrid();
     } else {
         content.classList.remove("hidden");
         grid.classList.add("hidden");
@@ -5217,12 +5346,12 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
 
         if (action === "buy") {
             const stars = getStars();
-            if (stars < BigInt(frame.price)) {
+            const price = BigInt(frame.price);
+            if (stars < price) {
                 showToast("❌ Недостаточно звёзд");
                 return;
             }
-            const newBalance = stars - BigInt(frame.price);
-            await saveStarsToCloud(newBalance);
+            await saveStarsToCloud(stars - price);
             userFrames.owned.push(frameId);
             userFrames.active = frameId;
             await saveFramesToCloud();
@@ -5232,7 +5361,9 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             applyActiveAvatar();
             showToast(`✅ Куплено: ${frame.name}!`);
             checkAchievements();
-        } else if (action === "apply") {
+        }
+
+        else if (action === "apply") {
             userFrames.active = frameId;
             await saveFramesToCloud();
             renderFramesGrid();
@@ -5268,12 +5399,12 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
 
         if (action === "buy") {
             const stars = getStars();
-            if (stars < avatar.price) {
+            const price = BigInt(avatar.price);
+            if (stars < price) {
                 showToast("❌ Недостаточно звёзд");
                 return;
             }
-            const newBalance = stars - avatar.price;
-            await saveStarsToCloud(newBalance);
+            await saveStarsToCloud(stars - price);
             userAvatars.owned.push(avatarId);
             userAvatars.active = avatarId;
             await saveAvatarsToCloud();
@@ -5282,6 +5413,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             applyActiveAvatar();
             applyActiveFrame();
             showToast(`✅ Куплено: ${avatar.name}!`);
+            checkAchievements();
         } else if (action === "apply") {
             userAvatars.active = avatarId;
             await saveAvatarsToCloud();
@@ -5290,6 +5422,7 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             applyActiveFrame();
             showToast(`✨ Применено: ${avatar.name}`);
         }
+        return;
     }
 
     // ===== ТИТУЛЫ =====
@@ -5320,11 +5453,12 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
 
         if (action === "buy") {
             const stars = getStars();
-            if (stars < title.price) {
+            const price = BigInt(title.price);
+            if (stars < price) {
                 showToast("❌ Недостаточно звёзд");
                 return;
             }
-            const newBalance = stars - title.price;
+            const newBalance = stars - price;
             await saveStarsToCloud(newBalance);
             userTitles.owned.push(titleId);
             userTitles.active = titleId;
@@ -5340,6 +5474,40 @@ document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
             renderTitlesGrid();
             applyActiveTitle();
             showToast(`🏆 Титул: ${title.name}`);
+        }
+        return;
+    }
+
+    const bannerBtn = e.target.closest("button[data-banner]");
+    if (bannerBtn && !bannerBtn.disabled) {
+        const bannerId = bannerBtn.dataset.banner;
+        const action = bannerBtn.dataset.action;
+        const banner = SHOP_BANNERS.find(b => b.id === bannerId);
+        if (!banner) return;
+        if (action === "buy") {
+            const stars = getStars();
+            const price = BigInt(banner.price);
+            if (stars < price) {
+                showToast("❌ Недостаточно звёзд");
+                return;
+            }
+            await saveStarsToCloud(stars - price);
+            userBanners.owned.push(bannerId);
+            userBanners.active = bannerId;
+            await saveBannersToCloud();
+            updateShopBalance();
+            renderBannersGrid();
+            applyActiveBanner();
+            showToast(`✅ Куплено: ${banner.name}!`);
+            checkAchievements();
+        }
+
+        else if (action === "apply") {
+            userBanners.active = bannerId;
+            await saveBannersToCloud();
+            renderBannersGrid();
+            applyActiveBanner();
+            showToast(`🖼️ Фон: ${banner.name}`);
         }
         return;
     }
@@ -5386,7 +5554,7 @@ function markRecipeCooked(recipeId) {
 }
 
 function openCookingMode(recipeId) {
-    const recipe = recipes.find(r => r.id === recipeId);
+    const recipe = findRecipe(recipeId);
     if (!recipe || !recipe.steps || !recipe.steps.length) {
         showToast("❌ У этого рецепта нет шагов");
         return;
@@ -5519,7 +5687,20 @@ async function handleCookingFinish() {
         switchTab("home");
         return;
     }
-
+    if (currentCookingRecipe.own) {
+        document.querySelector(".cooking-body").innerHTML = `
+        <div class="cooking-win">
+            <div class="cooking-win-icon">👨‍🍳</div>
+            <h1>Отлично!</h1>
+            <p>Вы приготовили <b>${currentCookingRecipe.name}</b></p>
+            <p style="font-size:14px;color:#999;">За свои рецепты exp не даётся.</p>
+            <div class="cooking-win-buttons">
+                <button class="cooking-btn cooking-btn-next" id="backToHome">🏠 На главную</button>
+                <button class="cooking-btn cooking-btn-prev" id="backToRecipes">🕮 Другие рецепты</button>
+            </div>
+        </div>`;
+        return;
+    }
     const result = markRecipeCooked(currentCookingRecipe.id);
 
     let expGained = 0;
@@ -7664,12 +7845,10 @@ async function renderWheel() {
 
             const angle = i * sectorAngle + sectorAngle / 2;
             const rad = (angle - 90) * Math.PI / 180;
-            const radius = 130;
-            const x = Math.cos(rad) * radius;
-            const y = Math.sin(rad) * radius;
+            const r = 31;
 
-            label.style.left = `calc(50% + ${x}px)`;
-            label.style.top = `calc(50% + ${y}px)`;
+            label.style.left = `${50 + Math.cos(rad) * r}%`;
+            label.style.top = `${50 + Math.sin(rad) * r}%`;
             label.style.transform = `translate(-50%, -50%)`;
 
             if (i % 2 === 0) {
@@ -7810,7 +7989,8 @@ async function spinWheel() {
     }
 
     setTimeout(async () => {
-        const newBalance = getStars() + BigInt(prize.stars);
+        const titleBonus = prize.stars > 0 ? getTitleBonus() : 0;
+        const newBalance = getStars() + BigInt(prize.stars + titleBonus);
         await saveStarsToCloud(newBalance);
 
         data.totalSpins++;
@@ -7832,7 +8012,7 @@ async function spinWheel() {
             showToast(`😢 Выпало: ${prize.emoji} Ничего. Не повезло!`);
         } else {
             setWheelBiggestWin(prize.stars);
-            showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}!${guarantee ? " (гарант)" : ""}`);
+            showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}${titleBonus ? ` +${titleBonus} ⭐ за титул` : ""}!${guarantee ? " (гарант)" : ""}`);
         }
 
         if (prize.id === "p9") {
@@ -7893,14 +8073,28 @@ async function getFriendsList() {
     return data?.friends || [];
 }
 
-function getLeaderStats(user) {
-    const exp = user.exp || 0;
-    let stars;
+function parseStarsSafe(raw) {
     try {
-        stars = BigInt(user.stars || 0);
+        if (typeof raw === "number") return BigInt(Math.trunc(raw));
+        return BigInt(raw || 0);
     } catch (e) {
-        stars = 0n;
+        return 0n;
     }
+}
+
+function formatStarsFull(v) {
+    if (v < 1000000000n) {
+        return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+    return formatBigNumber(v);
+}
+
+function getLeaderStats(user) {
+    const me = currentUser();
+    const exp = user.exp || 0;
+    const stars = (me && user.email === me.email)
+        ? getStars()
+        : parseStarsSafe(user.stars);
     const level = getLevelFromExp(exp);
     return { exp, stars, level };
 }
@@ -7997,7 +8191,7 @@ function renderLeaderRow(user, place, isMe) {
             </div>
             <div class="leader-stats">
                 <div class="leader-stat">
-                    <b>${formatBigNumber(stats.stars)}</b>
+                    <b>${formatStarsFull(stats.stars)}</b>
                     <small>⭐ звёзд</small>
                 </div>
                 <div class="leader-stat">
@@ -8085,8 +8279,6 @@ document.querySelector("#leadersList")?.addEventListener("click", async (e) => {
 
 window.renderLeaders = renderLeaders;
 
-/* ================= ТАБЫ ВНУТРИ ДРУЗЕЙ ================= */
-
 document.querySelector("#friendsInnerTabs")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".friends-inner-tab");
     if (!btn) return;
@@ -8103,3 +8295,384 @@ document.querySelector("#friendsInnerTabs")?.addEventListener("click", (e) => {
     if (sub === "list") renderFriends();
     if (sub === "requests") renderRequests();
 });
+
+/* ================= МОИ РЕЦЕПТЫ ================= */
+
+let myRecipes = [];
+const MY_RECIPES_LIMIT = 20;
+const MY_RECIPE_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='#fff3f3'/><text x='50%' y='55%' font-size='90' text-anchor='middle'>🍽️</text></svg>`
+);
+let mrImageData = "";
+
+function findRecipe(id) {
+    return recipes.find(r => r.id === id) || myRecipes.find(r => r.id === id);
+}
+
+function escHTML(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function loadMyRecipes() {
+    const user = currentUser();
+    if (!user) { myRecipes = []; renderMyRecipes(); return; }
+    try {
+        const data = await getUserData(user.email);
+        myRecipes = (data?.myRecipes || []).map(r => ({ ...r, own: true }));
+    } catch (e) {
+        console.error("Ошибка загрузки рецептов:", e);
+    }
+    renderMyRecipes();
+}
+
+async function saveMyRecipes() {
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return false;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        const clean = myRecipes.map(({ own, ...rest }) => rest);
+        await setDoc(doc(db, "users", user.email), { myRecipes: clean }, { merge: true });
+        return true;
+    } catch (e) {
+        console.error("Ошибка сохранения рецептов:", e);
+        return false;
+    }
+}
+
+function renderMyRecipes() {
+    const gridEl = document.querySelector("#myRecipesGrid");
+    if (!gridEl) return;
+    if (!myRecipes.length) {
+        gridEl.innerHTML = `<div class="empty">У вас пока нет своих рецептов. Нажмите «Добавить».</div>`;
+        return;
+    }
+    gridEl.innerHTML = myRecipes.map(r => `
+        <article class="recipe" data-id="${r.id}">
+          <img src="${r.img || MY_RECIPE_PLACEHOLDER}" alt="${r.name}">
+          <button class="heart my-recipe-del" data-del-my-recipe="${r.id}" title="Удалить">🗑</button>
+          <div class="recipe-body">
+            <div class="meta">◷ ${r.time}<span class="tag">${r.tag}</span></div>
+            <h3>${r.name}</h3>
+            <p>${r.desc}</p>
+            <div class="author">Мой рецепт</div>
+          </div>
+        </article>`).join("");
+}
+
+function resizeImageFile(file, maxSize = 480) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = reject;
+            img.onload = () => {
+                const k = Math.min(1, maxSize / Math.max(img.width, img.height));
+                const c = document.createElement("canvas");
+                c.width = Math.round(img.width * k);
+                c.height = Math.round(img.height * k);
+                c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+                resolve(c.toDataURL("image/jpeg", 0.7));
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function openMyRecipeModal() {
+    const user = currentUser();
+    if (!user) { showToast("❌ Войдите в аккаунт"); return; }
+    if (myRecipes.length >= MY_RECIPES_LIMIT) {
+        showToast(`❌ Максимум ${MY_RECIPES_LIMIT} рецептов`);
+        return;
+    }
+    document.querySelector("#myRecipeForm").reset();
+    document.querySelector("#mrError").textContent = "";
+    document.querySelector("#mrPreview").classList.add("hidden");
+    mrImageData = "";
+    document.querySelector("#myRecipeModal").classList.remove("hidden");
+}
+
+function closeMyRecipeModal() {
+    document.querySelector("#myRecipeModal").classList.add("hidden");
+}
+
+document.querySelector("#addMyRecipeBtn")?.addEventListener("click", openMyRecipeModal);
+document.querySelector("#myRecipeClose")?.addEventListener("click", closeMyRecipeModal);
+document.querySelector("#myRecipeModal")?.addEventListener("click", e => {
+    if (e.target.id === "myRecipeModal") closeMyRecipeModal();
+});
+
+document.querySelector("#mrImage")?.addEventListener("change", async e => {
+    const file = e.target.files[0];
+    const preview = document.querySelector("#mrPreview");
+    if (!file) { mrImageData = ""; preview.classList.add("hidden"); return; }
+    try {
+        mrImageData = await resizeImageFile(file);
+        preview.src = mrImageData;
+        preview.classList.remove("hidden");
+    } catch (err) {
+        mrImageData = "";
+        document.querySelector("#mrError").textContent = "Не удалось загрузить фото";
+    }
+});
+
+document.querySelector("#myRecipeForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = document.querySelector("#mrError");
+    const user = currentUser();
+    if (!user) { err.textContent = "Войдите в аккаунт"; return; }
+
+    const name = escHTML(document.querySelector("#mrName").value.trim());
+    const desc = escHTML(document.querySelector("#mrDesc").value.trim());
+    const time = escHTML(document.querySelector("#mrTime").value.trim());
+    const cat = document.querySelector("#mrCat").value;
+    const tag = document.querySelector("#mrTag").value;
+
+    const ingredients = document.querySelector("#mrIngredients").value
+        .split(/[,\n]+/).map(s => escHTML(s.trim())).filter(Boolean).slice(0, 40);
+    const stepLines = document.querySelector("#mrSteps").value
+        .split("\n").map(s => escHTML(s.trim())).filter(Boolean).slice(0, 40);
+
+    if (!name || !ingredients.length || !stepLines.length) {
+        err.textContent = "Заполните название, ингредиенты и шаги";
+        return;
+    }
+
+    const recipe = {
+        id: Date.now(),
+        name, cat, time, tag, desc,
+        img: mrImageData || "",
+        ingredients,
+        steps: stepLines.map((line, i) => ({
+            title: `Шаг ${i + 1}`,
+            substeps: [line]
+        })),
+        own: true
+    };
+
+    const btn = document.querySelector(".my-recipe-save-btn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Сохраняем...";
+
+    myRecipes.push(recipe);
+    const ok = await saveMyRecipes();
+
+    btn.disabled = false;
+    btn.textContent = "Сохранить рецепт";
+
+    if (!ok) {
+        myRecipes.pop();
+        err.textContent = "Не удалось сохранить, попробуйте позже";
+        return;
+    }
+
+    closeMyRecipeModal();
+    renderMyRecipes();
+    showToast("✅ Рецепт добавлен!");
+});
+
+document.querySelector("#myRecipesGrid")?.addEventListener("click", async e => {
+    const del = e.target.closest("[data-del-my-recipe]");
+    if (!del) return;
+    e.stopPropagation();
+    if (!confirm("Удалить рецепт?")) return;
+    const id = +del.dataset.delMyRecipe;
+    const backup = [...myRecipes];
+    myRecipes = myRecipes.filter(r => r.id !== id);
+    const ok = await saveMyRecipes();
+    if (!ok) { myRecipes = backup; showToast("❌ Ошибка удаления"); }
+    else showToast("🗑 Рецепт удалён");
+    renderMyRecipes();
+}, true);
+
+document.addEventListener("click", e => {
+    const btn = e.target.closest('[data-chef-tab="recipes"]');
+    if (btn) loadMyRecipes();
+});
+
+window.addEventListener("load", () => setTimeout(loadMyRecipes, 1500));
+
+/* ================= ТЕМЫ ОФОРМЛЕНИЯ ================= */
+
+const THEME_BG = [
+    { id: "default", name: "Белый", bg: "#ffffff", soft: "#fff3f3", card: "#ffffff", text: "#242424", border: "#f0e6e6", dark: false },
+    { id: "lavender", name: "Лаванда", bg: "#f3eefc", soft: "#e9e0fa", card: "#ffffff", text: "#242424", border: "#e0d4f5", dark: false },
+    { id: "sky", name: "Небо", bg: "#eaf3fd", soft: "#dbe9fa", card: "#ffffff", text: "#242424", border: "#cfe0f5", dark: false },
+    { id: "night", name: "Ночь", bg: "#14141c", soft: "#1b1b26", card: "#1f1f2b", text: "#f1f1f5", border: "#33334a", dark: true },
+    { id: "black", name: "Чёрный", bg: "#000000", soft: "#0c0c0c", card: "#121212", text: "#f5f5f5", border: "#2a2a2a", dark: true }
+];
+
+const THEME_ACCENT = [
+    { id: "red", name: "Красный", c: "#df2026", d: "#a81419" },
+    { id: "purple", name: "Фиолетовый", c: "#7c3aed", d: "#5b21b6" },
+    { id: "blue", name: "Синий", c: "#2563eb", d: "#1d4ed8" },
+    { id: "black", name: "Чёрный", c: "#2b2b2b", d: "#000000" },
+    { id: "green", name: "Зелёный", c: "#10b981", d: "#047857" },
+    { id: "orange", name: "Оранжевый", c: "#ea580c", d: "#c2410c" }
+];
+
+let userTheme = (() => {
+    try {
+        return Object.assign({ bg: "default", accent: "red" }, JSON.parse(localStorage.getItem("vc_theme") || "{}"));
+    } catch (e) {
+        return { bg: "default", accent: "red" };
+    }
+})();
+
+function buildThemeCSS() {
+    const bg = THEME_BG.find(b => b.id === userTheme.bg) || THEME_BG[0];
+    const ac = THEME_ACCENT.find(a => a.id === userTheme.accent) || THEME_ACCENT[0];
+    const grad = `linear-gradient(135deg, ${ac.c}, ${ac.d})`;
+
+    let css = `
+body { background: ${bg.bg} !important; color: ${bg.text} !important; }
+
+.nav-link.active, .search button, .chip.active, .round, .cooking-btn-next,
+.my-recipe-add-btn, .my-recipe-save-btn, .auth-form button, .fridge-search button,
+.promo-form button, .chef-friends-search button, .vc-toast,
+.achievement.unlocked::after, .cooking-dot.active, .wcr-percent,
+.password-submit-btn:not(:disabled), .chef-sidebar-btn.active, .chef-level-icon,
+#startCookingBtn, .btn-profile, .friend-add-btn, #friendsSearchForm button {
+    background: ${grad} !important;
+    color: #fff !important;
+}
+.page-hero:not(.rewards-hero):not(.shop-hero):not(.friends-hero), .cooking-header,
+.chef-level-fill, .profile-avatar:not([class*="frame-"]), .nav-avatar:not([class*="frame-"]) {
+    background: ${grad} !important;
+}
+.hero h1 span, .brand i, .text-btn, .chef-stat b, .chef-level-exp, .chef-section-count,
+.fridge-hero h1 span, .auth-tab.active, .leaders-tab.active, .friends-inner-tab.active,
+.cooking-step-badge, .cooking-step-title {
+    color: ${ac.c} !important;
+}
+.chef-sidebar-btn:hover { color: ${ac.c} !important; }
+.search button:hover, .fridge-search button:hover { filter: brightness(.9); }
+input:focus, textarea:focus, select:focus { border-color: ${ac.c} !important; }
+.taste { background: ${bg.soft} !important; }
+`;
+
+    if (bg.dark) {
+        css += `
+.topbar, .benefits, .modal-box, .auth-block, .recipe, .chef-section, .chef-stat,
+.chef-level-block, .chef-sidebar, .chef-hero, .chef-hero-inner, .shop-card,
+.leader-row, .friend-row, .friend-result-card, .rewards-calendar-wrap,
+.rewards-calendar tbody td, .wheel-left, .wheel-right, .delete-modal-box,
+.cooking-step-content, .chef-achievements .achievement, .friends-search,
+.rewards-stats > div, .shop-stats > div, .promo-history-item {
+    background: ${bg.card} !important;
+    border-color: ${bg.border} !important;
+    color: ${bg.text} !important;
+}
+.rewards-calendar thead th, .rewards-calendar tbody td.empty-cell,
+.rewards-calendar tbody td.future-cell, .friends-inner-tabs, .leaders-tabs,
+.auth-tabs, .settings-toggle-group { background: ${bg.soft} !important; color: ${bg.text} !important; }
+.chef-achievements .achievement.unlocked { background: ${bg.soft} !important; }
+.wheel-page { background: ${bg.bg} !important; }
+.wheel-balance-card, .wheel-chance-row, .leaders-my-rating { background: ${bg.soft} !important; }
+h1, h2, h3, b, .brand, .chef-name, .nav-link, .recipe h3, .section-title h2,
+.fridge-results-head h2, .day-num-cell, .day-reward, .wcr-label, .leader-info b,
+.friend-row .info b, .settings-label b, .wheel-title { color: ${bg.text} !important; }
+.page-hero h1, .page-hero p, .cooking-header h2, .hero h1, .hero h2, .hero p,
+.fridge-hero h1, .fridge-hero p, .nav-link.active, .wheel-balance-num { color: #fff !important; }
+.recipe p, .recipe .meta, small, .muted { color: #9a9aaa !important; }
+.chef-sidebar-btn { color: ${bg.text} !important; }
+.chef-sidebar-btn:hover { background: ${bg.soft} !important; }
+input, textarea, select { background: ${bg.soft} !important; color: ${bg.text} !important; border-color: ${bg.border} !important; }
+.search, .fridge-search { background: #fff !important; }
+.search input, .fridge-search input { background: transparent !important; color: #222 !important; }
+.topbar { border-bottom-color: ${bg.border} !important; }
+`;
+    } else if (bg.id !== "default") {
+        css += `
+.recipe, .chef-section, .chef-stat, .chef-level-block, .chef-sidebar, .leader-row,
+.friend-row, .shop-card, .auth-block, .modal-box { border-color: ${bg.border} !important; }
+.benefits, .topbar { background: ${bg.bg} !important; }
+`;
+    }
+    return css;
+}
+
+function applyTheme() {
+    let el = document.querySelector("#vcThemeStyle");
+    if (!el) {
+        el = document.createElement("style");
+        el.id = "vcThemeStyle";
+        document.head.appendChild(el);
+    }
+    el.textContent = (userTheme.bg === "default" && userTheme.accent === "red") ? "" : buildThemeCSS();
+    renderThemeSwatches();
+}
+
+function renderThemeSwatches() {
+    const bgBox = document.querySelector("#themeBgList");
+    const acBox = document.querySelector("#themeAccentList");
+    if (bgBox) {
+        bgBox.innerHTML = THEME_BG.map(b => `
+            <button type="button" class="theme-swatch ${userTheme.bg === b.id ? "active" : ""}"
+                data-theme-bg="${b.id}" title="${b.name}">
+                <span class="theme-dot" style="background:${b.bg};border-color:${b.dark ? "#555" : "#ccc"};"></span>
+                <small>${b.name}</small>
+            </button>`).join("");
+    }
+    if (acBox) {
+        acBox.innerHTML = THEME_ACCENT.map(a => `
+            <button type="button" class="theme-swatch ${userTheme.accent === a.id ? "active" : ""}"
+                data-theme-accent="${a.id}" title="${a.name}">
+                <span class="theme-dot" style="background:linear-gradient(135deg,${a.c},${a.d});"></span>
+                <small>${a.name}</small>
+            </button>`).join("");
+    }
+}
+
+async function saveTheme() {
+    localStorage.setItem("vc_theme", JSON.stringify(userTheme));
+    applyTheme();
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), { theme: userTheme }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения темы:", e);
+    }
+}
+
+async function loadThemeFromCloud() {
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return;
+    try {
+        const data = await getUserData(user.email);
+        if (data?.theme) {
+            userTheme = Object.assign({ bg: "default", accent: "red" }, data.theme);
+            localStorage.setItem("vc_theme", JSON.stringify(userTheme));
+            applyTheme();
+        }
+    } catch (e) {
+        console.error("Ошибка загрузки темы:", e);
+    }
+}
+
+document.addEventListener("click", e => {
+    const bgBtn = e.target.closest("[data-theme-bg]");
+    if (bgBtn) {
+        userTheme.bg = bgBtn.dataset.themeBg;
+        saveTheme();
+        return;
+    }
+    const acBtn = e.target.closest("[data-theme-accent]");
+    if (acBtn) {
+        userTheme.accent = acBtn.dataset.themeAccent;
+        saveTheme();
+        return;
+    }
+    if (e.target.closest("#themeResetBtn")) {
+        userTheme = { bg: "default", accent: "red" };
+        saveTheme();
+        showToast("↺ Оформление сброшено");
+    }
+});
+
+applyTheme();
+window.addEventListener("load", () => setTimeout(loadThemeFromCloud, 1200));
