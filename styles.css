@@ -6644,6 +6644,92 @@ body.desktop-view .nav-icon {
     color: #888;
 }
 
+
+/* ===== СВОЯ АВАТАРКА: камера и наведение ===== */
+
+#avatarUploadBlock {
+    cursor: pointer;
+}
+
+.avatar-hover {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90px;
+    height: 90px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: .2s;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#avatarUploadBlock:has(.frame-admin) .avatar-hover {
+    width: 95px;
+    height: 95px;
+}
+
+#avatarUploadBlock:has(.frame-zombie) .avatar-hover {
+    width: 100px;
+    height: 100px;
+}
+
+#avatarUploadBlock:has(.frame-bronze) .avatar-hover,
+#avatarUploadBlock:has(.frame-silver) .avatar-hover,
+#avatarUploadBlock:has(.frame-gold) .avatar-hover,
+#avatarUploadBlock:has(.frame-diamond) .avatar-hover,
+#avatarUploadBlock:has(.frame-rainbow) .avatar-hover {
+    width: 82px;
+    height: 82px;
+}
+
+#avatarUploadBlock:hover .avatar-hover {
+    opacity: 1;
+}
+
+.avatar-cam-btn,
+.avatar-del-btn {
+    position: absolute;
+    bottom: 2px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    color: #fff;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    z-index: 8;
+    transition: .2s;
+    font-family: inherit;
+}
+
+.avatar-cam-btn {
+    right: 2px;
+    background: #222;
+    font-size: 14px;
+}
+
+.avatar-del-btn {
+    left: 2px;
+    background: #dc2626;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.avatar-cam-btn:hover,
+.avatar-del-btn:hover {
+    transform: scale(1.12);
+}
+
 #page-profile .profile-banner {
     position: relative;
     height: 200px;
