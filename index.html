@@ -290,8 +290,14 @@
                     <div class="chef-hero">
                         <div class="profile-banner" id="profileBanner"></div>
                         <div class="chef-hero-inner">
-                            <div class="chef-avatar-block">
+                            <div class="chef-avatar-block" id="avatarUploadBlock">
+                                <div class="avatar-hover">📷</div>
                                 <div class="profile-avatar" id="profileAvatar">👨‍🍳</div>
+                                <button type="button" class="avatar-cam-btn" id="avatarCamBtn"
+                                    title="Сменить фото">📷</button>
+                                <button type="button" class="avatar-del-btn hidden" id="avatarDelBtn"
+                                    title="Убрать фото">✕</button>
+                                <input type="file" id="avatarFileInput" accept="image/*" hidden>
                             </div>
                             <div class="chef-hero-info">
                                 <h1 class="chef-name" id="profileName">—</h1>
@@ -695,65 +701,63 @@
                                 </div>
 
                                 <div class="password-group">
+                                    <h3>Пароль</h3>
+                                    <p class="muted">После смены остальные устройства выйдут из аккаунта, на почту
+                                        придёт уведомление</p>
 
-                                    <div class="password-group">
-                                        <h3>Пароль</h3>
-                                        <p class="muted">После смены остальные устройства выйдут из аккаунта, на почту
-                                            придёт уведомление</p>
-
-                                        <form id="changePasswordForm" class="password-form">
-                                            <div class="password-row">
-                                                <div class="password-field">
-                                                    <label>Текущий пароль</label>
-                                                    <input type="password" id="currentPassword"
-                                                        placeholder="Введи текущий пароль"
-                                                        autocomplete="current-password" required>
-                                                </div>
-                                                <div class="password-field">
-                                                    <label>Новый пароль</label>
-                                                    <input type="password" id="newPassword"
-                                                        placeholder="Не короче 10 символов" autocomplete="new-password"
-                                                        minlength="10" required>
-                                                </div>
-                                                <button type="submit" class="password-submit-btn"
-                                                    id="changePasswordBtn">Сменить</button>
+                                    <form id="changePasswordForm" class="password-form">
+                                        <div class="password-row">
+                                            <div class="password-field">
+                                                <label>Текущий пароль</label>
+                                                <input type="password" id="currentPassword"
+                                                    placeholder="Введи текущий пароль" autocomplete="current-password"
+                                                    required>
                                             </div>
-                                            <p class="password-error" id="passwordError"></p>
-                                            <p class="password-success" id="passwordSuccess"></p>
-                                        </form>
-                                    </div>
-
-                                    <div class="account-actions">
-                                        <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
-                                        <button class="delete-account-btn" id="deleteAccountBtn">🗑 Удалить
-                                            аккаунт</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="chef-tab-content" data-chef-content="promo">
-                                <div class="chef-section">
-                                    <div class="chef-section-head">
-                                        <h2>🎟️ Промокоды</h2>
-                                        <span class="chef-section-count" id="promoCount">0 активировано</span>
-                                    </div>
-                                    <p class="muted">Введи промокод и получи звёзды на баланс. Каждый код можно
-                                        активировать только один раз.</p>
-
-                                    <form id="promoForm" class="promo-form">
-                                        <input type="text" id="promoInput" placeholder="ВВЕДИ ПРОМОКОД"
-                                            autocomplete="off" spellcheck="false">
-                                        <button type="submit">🎁 Активировать</button>
+                                            <div class="password-field">
+                                                <label>Новый пароль</label>
+                                                <input type="password" id="newPassword"
+                                                    placeholder="Не короче 10 символов" autocomplete="new-password"
+                                                    minlength="10" required>
+                                            </div>
+                                            <button type="submit" class="password-submit-btn"
+                                                id="changePasswordBtn">Сменить</button>
+                                        </div>
+                                        <p class="password-error" id="passwordError"></p>
+                                        <p class="password-success" id="passwordSuccess"></p>
                                     </form>
+                                </div>
 
-                                    <p class="promo-error" id="promoError"></p>
-
-                                    <div id="promoHistory" class="promo-history"></div>
+                                <div class="account-actions">
+                                    <button class="logout-btn" id="logoutBtn">Выйти из аккаунта</button>
+                                    <button class="delete-account-btn" id="deleteAccountBtn">🗑 Удалить
+                                        аккаунт</button>
                                 </div>
                             </div>
                         </div>
 
+                        <div class="chef-tab-content" data-chef-content="promo">
+                            <div class="chef-section">
+                                <div class="chef-section-head">
+                                    <h2>🎟️ Промокоды</h2>
+                                    <span class="chef-section-count" id="promoCount">0 активировано</span>
+                                </div>
+                                <p class="muted">Введи промокод и получи звёзды на баланс. Каждый код можно
+                                    активировать только один раз.</p>
+
+                                <form id="promoForm" class="promo-form">
+                                    <input type="text" id="promoInput" placeholder="ВВЕДИ ПРОМОКОД" autocomplete="off"
+                                        spellcheck="false">
+                                    <button type="submit">🎁 Активировать</button>
+                                </form>
+
+                                <p class="promo-error" id="promoError"></p>
+
+                                <div id="promoHistory" class="promo-history"></div>
+                            </div>
+                        </div>
                     </div>
+
+                </div>
 
         </section>
 
@@ -835,7 +839,6 @@
 
             <div class="shop-tabs" id="shopTabs">
                 <button class="shop-tab active" data-shop="frames">🎨 Рамки</button>
-                <button class="shop-tab" data-shop="avatars">😎 Аватарки</button>
                 <button class="shop-tab" data-shop="titles">🏆 Титулы</button>
                 <button class="shop-tab" data-shop="banners">🖼️ Фоны</button>
             </div>
