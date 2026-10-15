@@ -7,7 +7,8 @@ let userFrames = {
 
 let userAvatars = {
     owned: [],
-    active: null
+    active: null,
+    custom: ""
 };
 
 /* ================= ОСОБЫЕ ПОЛЬЗОВАТЕЛИ ================= */
@@ -3743,8 +3744,8 @@ function renderProfile() {
     avatarEl.setAttribute("data-letter", freshUser.name[0].toUpperCase());
     avatarEl.innerHTML = "";
 
-    if (userAvatars.active) {
-        avatarEl.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="avatar">`;
+    if (myAvatarSrc()) {
+        avatarEl.innerHTML = `<img src="${myAvatarSrc()}" alt="avatar">`;
     } else {
         avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${freshUser.name[0].toUpperCase()}</span>`;
     }
@@ -5082,6 +5083,7 @@ async function loadAvatarsFromCloud() {
             const data = snap.data();
             userAvatars.owned = data.ownedAvatars || [];
             userAvatars.active = data.activeAvatar || null;
+            userAvatars.custom = data.customAvatar || "";
             applyActiveAvatar();
         }
     } catch (e) {
@@ -5148,8 +5150,8 @@ function updateNavAvatar() {
 
     const letter = (user.name || "?")[0].toUpperCase();
 
-    if (typeof userAvatars !== "undefined" && userAvatars.active) {
-        el.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="">`;
+    if (typeof userAvatars !== "undefined" && myAvatarSrc()) {
+        el.innerHTML = `<img src="${myAvatarSrc()}" alt="">`;
     } else {
         el.innerHTML = `<span>${letter}</span>`;
     }
@@ -5168,8 +5170,9 @@ function applyActiveAvatar() {
 
     avatar.innerHTML = "";
 
-    if (userAvatars.active) {
-        avatar.innerHTML = `<img src="images/avatar-${userAvatars.active}.png" alt="avatar">`;
+    updateAvatarDelBtn();
+    if (myAvatarSrc()) {
+        avatar.innerHTML = `<img src="${myAvatarSrc()}" alt="avatar">`;
     } else {
         avatar.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${letter}</span>`;
     }
@@ -6024,8 +6027,8 @@ async function renderFriends() {
         const letter = (f.name || "?")[0].toUpperCase();
 
         let avatarHTML = "";
-        if (f.activeAvatar) {
-            avatarHTML = `<img src="images/avatar-${f.activeAvatar}.png" alt="">`;
+        if (avatarSrcOf(f)) {
+            avatarHTML = `<img src="${avatarSrcOf(f)}" alt="">`;
         } else {
             avatarHTML = letter;
         }
@@ -6462,8 +6465,8 @@ async function openFriendPage(friend) {
             avatarEl.classList.add("frame-" + friend.activeFrame);
         }
 
-        if (friend.activeAvatar) {
-            avatarEl.innerHTML = `<img src="images/avatar-${friend.activeAvatar}.png" alt="avatar">`;
+        if (avatarSrcOf(friend)) {
+            avatarEl.innerHTML = `<img src="${avatarSrcOf(friend)}" alt="avatar">`;
         } else {
             avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
         }
@@ -8101,12 +8104,12 @@ function getLeaderStats(user) {
 
 function buildAvatarWithFrame(user) {
     const letter = (user.name || "?")[0].toUpperCase();
-    const hasAvatar = user.activeAvatar;
+    const hasAvatar = avatarSrcOf(user);
     const hasFrame = user.activeFrame;
 
     let inner = "";
     if (hasAvatar) {
-        inner = `<img src="images/avatar-${user.activeAvatar}.png" alt="">`;
+        inner = `<img src="${hasAvatar}" alt="">`;
     } else {
         inner = `<span style="color:#fff;font-size:18px;font-weight:800;">${letter}</span>`;
     }
@@ -8676,3 +8679,113 @@ document.addEventListener("click", e => {
 
 applyTheme();
 window.addEventListener("load", () => setTimeout(loadThemeFromCloud, 1200));
+
+
+/* ================= СВОИ АВАТАРКИ ================= */
+
+function myAvatarSrc() {
+    if (userAvatars.custom) return userAvatars.custom;
+    if (userAvatars.active) return `images/avatar-${userAvatars.active}.png`;
+    return "";
+}
+
+function avatarSrcOf(data) {
+    if (!data) return "";
+    if (data.customAvatar) return data.customAvatar;
+    if (data.activeAvatar) return `images/avatar-${data.activeAvatar}.png`;
+    return "";
+}
+
+function updateAvatarDelBtn() {
+    const btn = document.querySelector("#avatarDelBtn");
+    if (btn) btn.classList.toggle("hidden", !myAvatarSrc());
+}
+
+function cropAvatarFile(file, size = 256) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = reject;
+            img.onload = () => {
+                const side = Math.min(img.width, img.height);
+                const sx = (img.width - side) / 2;
+                const sy = (img.height - side) / 2;
+                const c = document.createElement("canvas");
+                c.width = size;
+                c.height = size;
+                c.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, size, size);
+                resolve(c.toDataURL("image/jpeg", 0.85));
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function saveAvatarSettings() {
+    const user = currentUser();
+    if (!user || !window.firebaseDB) return false;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), {
+            customAvatar: userAvatars.custom || "",
+            activeAvatar: userAvatars.active || null,
+            ownedAvatars: userAvatars.owned || []
+        }, { merge: true });
+        return true;
+    } catch (e) {
+        console.error("Ошибка сохранения аватарки:", e);
+        return false;
+    }
+}
+
+async function removeCustomAvatar() {
+    if (!confirm("Убрать аватарку?")) return;
+    userAvatars.custom = "";
+    userAvatars.active = null;
+    await saveAvatarSettings();
+    applyActiveAvatar();
+    applyActiveFrame();
+    showToast("✨ Аватарка убрана");
+}
+
+document.addEventListener("click", e => {
+    if (e.target.id === "avatarFileInput") return;
+    if (e.target.closest("#avatarDelBtn")) {
+        removeCustomAvatar();
+        return;
+    }
+    if (e.target.closest("#avatarUploadBlock")) {
+        if (!currentUser()) { showToast("❌ Войдите в аккаунт"); return; }
+        document.querySelector("#avatarFileInput")?.click();
+    }
+});
+
+document.addEventListener("change", async e => {
+    if (e.target.id !== "avatarFileInput") return;
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+        showToast("❌ Выбери картинку");
+        return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+        showToast("❌ Файл больше 8 МБ");
+        return;
+    }
+    try {
+        userAvatars.custom = await cropAvatarFile(file);
+        const ok = await saveAvatarSettings();
+        applyActiveAvatar();
+        applyActiveFrame();
+        showToast(ok ? "✅ Аватарка обновлена!" : "⚠️ Сохранилось только на этом устройстве");
+    } catch (err) {
+        console.error(err);
+        showToast("❌ Не удалось загрузить фото");
+    }
+});
+
+window.addEventListener("load", () => setTimeout(updateAvatarDelBtn, 1500));
