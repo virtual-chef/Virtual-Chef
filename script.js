@@ -6445,6 +6445,17 @@ async function openFriendPage(friend) {
 
     const titleBadge = document.querySelector("#friendTitleBadge");
     const titleText = document.querySelector("#friendTitleText");
+    const friendBannerEl = document.querySelector("#friendBanner");
+    if (friendBannerEl) {
+        const fb = SHOP_BANNERS.find(b => b.id === friend.activeBanner) || SHOP_BANNERS[0];
+        friendBannerEl.style.background = fb.css;
+        friendBannerEl.style.backgroundSize = "cover";
+        friendBannerEl.style.backgroundPosition = "center";
+    }
+    document.querySelectorAll("[data-friend-tab]").forEach(b =>
+        b.classList.toggle("active", b.dataset.friendTab === "profile"));
+    document.querySelectorAll("[data-friend-content]").forEach(c =>
+        c.classList.toggle("active", c.dataset.friendContent === "profile"));
     if (titleBadge && titleText) {
         const friendTitle = SHOP_TITLES.find(t => t.id === friend.activeTitle);
         if (friendTitle && friendTitle.text) {
@@ -7716,12 +7727,12 @@ document.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-chef-tab]");
     if (!btn) return;
 
-    document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("[data-chef-tab]").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
 
     const tabName = btn.dataset.chefTab;
 
-    document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
+    document.querySelectorAll("[data-chef-content]").forEach(c => c.classList.remove("active"));
     const targetContent = document.querySelector(`[data-chef-content="${tabName}"]`);
     if (targetContent) targetContent.classList.add("active");
 
