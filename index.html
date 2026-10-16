@@ -51,6 +51,10 @@
                     <span class="stars-count" id="starsCount">0</span>
                 </button>
                 <button class="calendar-btn" title="Календарь наград" id="calendarBtn">📅</button>
+                <button class="streak-btn off" title="Дней подряд на сайте" id="streakBtn">
+                    <span class="streak-flame">🔥</span>
+                    <span class="streak-num" id="streakCount">0</span>
+                </button>
                 <button class="shop-btn" title="Магазин" id="shopBtn">🛒</button>
                 <button class="view-toggle-btn" title="Переключить версию" id="viewToggle"
                     onclick="toggleViewMode()">🖥</button>
@@ -312,17 +316,17 @@
 
                 <div class="chef-stats">
                     <div class="chef-stat">
-                        <span class="chef-stat-icon">🍳</span>
+                        <span class="chef-stat-icon off" id="profileStreakIcon">🔥</span>
                         <div>
-                            <b id="statOpened">0</b>
-                            <small>Рецептов</small>
+                            <b id="profileStreak">0 дней</b>
+                            <small>Серия</small>
                         </div>
                     </div>
                     <div class="chef-stat">
-                        <span class="chef-stat-icon">❤️</span>
+                        <span class="chef-stat-icon">🔥</span>
                         <div>
-                            <b id="statFavs">0</b>
-                            <small>Понравилось</small>
+                            <b id="profileBestStreak">0 дней</b>
+                            <small>Лучшая</small>
                         </div>
                     </div>
                     <div class="chef-stat">
