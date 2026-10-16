@@ -7071,3 +7071,57 @@ body.desktop-view .nav-icon {
         height: 50px;
     }
 }
+
+/* ================= 🔥 СЕРИЯ ЗАХОДОВ ================= */
+
+.nav-actions .streak-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 10px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #333;
+    cursor: default;
+}
+
+.streak-flame {
+    font-size: 24px;
+    line-height: 1;
+    transition: .2s;
+}
+
+.streak-num {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.streak-btn.off .streak-flame {
+    filter: grayscale(1);
+    opacity: .5;
+}
+
+.streak-btn.off .streak-num {
+    color: #888;
+}
+
+.chef-stat-icon.off {
+    filter: grayscale(1);
+    opacity: .5;
+}
+
+@media (max-width: 520px) {
+    .nav-actions .streak-btn {
+        padding: 0 4px;
+        gap: 2px;
+    }
+
+    .streak-flame {
+        font-size: 18px;
+    }
+
+    .streak-num {
+        font-size: 14px;
+    }
+}
