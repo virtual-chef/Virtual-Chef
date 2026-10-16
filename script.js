@@ -8806,7 +8806,7 @@ document.addEventListener("change", async e => {
 
 window.addEventListener("load", () => setTimeout(updateAvatarDelBtn, 1500));
 
-/* ================= 🔥 СЕРИЯ ЗАХОДОВ ================= */
+/* ================= 🔥 ОГОНЕК ================= */
 
 function streakKey() {
     const email = localStorage.getItem("vc_user_email");
@@ -8837,7 +8837,6 @@ function yesterdayKey() {
     return dateKey(d);
 }
 
-// Серия, которую показываем: если вчера/сегодня не заходил — 0
 function getDisplayStreak() {
     const d = getStreakData();
     if (d.last === dateKey(new Date()) || d.last === yesterdayKey()) return d.current;
@@ -8900,7 +8899,6 @@ async function loadStreakFromCloud() {
             current: c.streakCurrent || 0,
             best: c.streakBest || 0
         };
-        // берём более свежую запись, рекорд — максимум из двух
         const base = cloud.last > local.last ? cloud : local;
         const merged = {
             last: base.last,
