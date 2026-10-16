@@ -3778,6 +3778,7 @@ function renderProfile() {
 
     const statFavsEl = document.querySelector("#statFavs");
     if (statFavsEl) statFavsEl.textContent = favorites.length;
+    updateStreakUI();
 
     const aсhvCountEl = document.querySelector("#vkAchvCount");
     if (aсhvCountEl) {
@@ -4234,6 +4235,7 @@ async function deleteMyAccount() {
         localStorage.removeItem("vc_wheel_nothing_" + email);
         localStorage.removeItem("vc_wheel_biggest_" + email);
         localStorage.removeItem("vc_wheel_secret_" + email);
+        localStorage.removeItem("vc_streak_" + email);
         localStorage.removeItem("vc_cooked_recipes");
         localStorage.removeItem("vc_cooked_counts");
         localStorage.removeItem("favorites");
@@ -4744,6 +4746,8 @@ async function initAuthListener() {
             applyActiveBanner();
             await loadAchievementsFromCloud();
             await loadPrivacyFromCloud();
+            await loadStreakFromCloud();
+            await updateStreakOnVisit();
             updateNavAvatar();
             const tempUser = currentUser();
             if (tempUser && isSuperUser(tempUser.email)) {
@@ -4764,6 +4768,7 @@ async function initAuthListener() {
         } else {
             localStorage.removeItem("vc_user_email");
             updateNavAvatar();
+            updateStreakUI();
         }
         renderProfile();
     });
@@ -8800,3 +8805,131 @@ document.addEventListener("change", async e => {
 });
 
 window.addEventListener("load", () => setTimeout(updateAvatarDelBtn, 1500));
+
+/* ================= 🔥 СЕРИЯ ЗАХОДОВ ================= */
+
+function streakKey() {
+    const email = localStorage.getItem("vc_user_email");
+    return email ? "vc_streak_" + email : null;
+}
+
+function getStreakData() {
+    const key = streakKey();
+    if (!key) return { last: "", current: 0, best: 0 };
+    try {
+        return Object.assign(
+            { last: "", current: 0, best: 0 },
+            JSON.parse(localStorage.getItem(key) || "{}")
+        );
+    } catch (e) {
+        return { last: "", current: 0, best: 0 };
+    }
+}
+
+function saveStreakLocal(data) {
+    const key = streakKey();
+    if (key) localStorage.setItem(key, JSON.stringify(data));
+}
+
+function yesterdayKey() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return dateKey(d);
+}
+
+// Серия, которую показываем: если вчера/сегодня не заходил — 0
+function getDisplayStreak() {
+    const d = getStreakData();
+    if (d.last === dateKey(new Date()) || d.last === yesterdayKey()) return d.current;
+    return 0;
+}
+
+function pluralDays(n) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m100 >= 11 && m100 <= 14) return "дней";
+    if (m10 === 1) return "день";
+    if (m10 >= 2 && m10 <= 4) return "дня";
+    return "дней";
+}
+
+function updateStreakUI() {
+    const d = getStreakData();
+    const cur = getDisplayStreak();
+
+    const btn = document.querySelector("#streakBtn");
+    const num = document.querySelector("#streakCount");
+    if (num) num.textContent = cur;
+    if (btn) btn.classList.toggle("off", cur === 0);
+
+    const pCur = document.querySelector("#profileStreak");
+    const pBest = document.querySelector("#profileBestStreak");
+    const pIcon = document.querySelector("#profileStreakIcon");
+    if (pCur) pCur.textContent = `${cur} ${pluralDays(cur)}`;
+    if (pBest) pBest.textContent = `${d.best} ${pluralDays(d.best)}`;
+    if (pIcon) pIcon.classList.toggle("off", cur === 0);
+}
+
+async function saveStreakToCloud(data) {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, setDoc } = window.firebaseDB;
+        await setDoc(doc(db, "users", user.email), {
+            streakCurrent: data.current,
+            streakBest: data.best,
+            streakLast: data.last
+        }, { merge: true });
+    } catch (e) {
+        console.error("Ошибка сохранения серии:", e);
+    }
+}
+
+async function loadStreakFromCloud() {
+    if (!window.firebaseDB) return;
+    const user = currentUser();
+    if (!user) return;
+    try {
+        const { db, doc, getDoc } = window.firebaseDB;
+        const snap = await getDoc(doc(db, "users", user.email));
+        if (!snap.exists()) return;
+        const c = snap.data();
+        const local = getStreakData();
+        const cloud = {
+            last: c.streakLast || "",
+            current: c.streakCurrent || 0,
+            best: c.streakBest || 0
+        };
+        // берём более свежую запись, рекорд — максимум из двух
+        const base = cloud.last > local.last ? cloud : local;
+        const merged = {
+            last: base.last,
+            current: base.current,
+            best: Math.max(local.best, cloud.best, base.current)
+        };
+        saveStreakLocal(merged);
+        updateStreakUI();
+    } catch (e) {
+        console.error("Ошибка загрузки серии:", e);
+    }
+}
+
+async function updateStreakOnVisit() {
+    if (!currentUser()) return;
+    const data = getStreakData();
+    const today = dateKey(new Date());
+    if (data.last === today) { updateStreakUI(); return; }
+
+    if (data.last === yesterdayKey()) data.current += 1;
+    else data.current = 1;
+
+    data.best = Math.max(data.best, data.current);
+    data.last = today;
+
+    saveStreakLocal(data);
+    updateStreakUI();
+    await saveStreakToCloud(data);
+    if (data.current > 1) showToast(`🔥 Серия: ${data.current} ${pluralDays(data.current)} подряд!`);
+}
+
+window.addEventListener("load", () => setTimeout(updateStreakUI, 300));
