@@ -434,6 +434,11 @@ body {
     margin-left: 3px;
 }
 
+.recipe:nth-child(2) .tag {
+    background: #fff0df;
+    color: #e28a2a;
+}
+
 .recipe h3 {
     font-size: 11px;
     margin: 0 0 6px;
@@ -7067,7 +7072,7 @@ body.desktop-view .nav-icon {
     }
 }
 
-/* ================= 🔥 ОГОНЕК ================= */
+/* ================= 🔥 СЕРИЯ ЗАХОДОВ ================= */
 
 .nav-actions .streak-btn {
     display: inline-flex;
@@ -7119,57 +7124,4 @@ body.desktop-view .nav-icon {
     .streak-num {
         font-size: 14px;
     }
-}
-
-#friendFriendsList {
-    display: block;
-}
-
-.friend-row-click {
-    cursor: pointer;
-}
-
-.friend-row-click:hover {
-    border-color: #8b5cf6;
-    transform: translateY(-2px);
-}
-
-.chef-avatar-block .profile-avatar:not([class*="frame-"]) {
-    background: linear-gradient(135deg, #df2026, #a81419) !important;
-    border: 0 !important;
-    border-radius: 50% !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-}
-
-.chef-avatar-block .profile-avatar:not([class*="frame-"]) img {
-    width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-}
-
-.tag.mid {
-    background: #fff0df;
-    color: #e28a2a;
-}
-
-.tag.hard {
-    background: #fde2e2;
-    color: #dc2626;
-}
-
-#friendBackBtn {
-    background: #f3f4f6;
-    color: #374151;
-}
-
-#friendBackBtn:hover {
-    background: #e5e7eb;
-}
-
-.chef-sidebar-btn .nav-badge {
-    font-size: 10px;
-    width: auto;
-    margin-left: auto;
-    color: #fff;
 }
