@@ -86,7 +86,7 @@ function isFriendUser(email) {
 function isForbiddenName(name) {
     const clean = name.toLowerCase().replace(/[^a-zа-яё0-9]/gi, "");
     const forbiddenRoots = [
-        "админ", "admin", "admn", "adm1n", "4dmin",
+        "админ", "admin", "adm", "amin", "admn", "adm1n", "4dmin",
         "аdмин", "admин", "aдмин", "аdmin", "адmин", "admіn",
         "admln", "adrnin", "αdmin", "👑"
     ];
@@ -3269,24 +3269,13 @@ const recipes = [
         ]
     }
 ];
-function favKey() {
-    const e = localStorage.getItem("vc_user_email");
-    return e ? "favorites_" + e : "favorites";
-}
-function loadFavoritesLocal() {
-    let raw = localStorage.getItem(favKey());
-    if (raw === null) raw = localStorage.getItem("favorites");
-    try { return JSON.parse(raw || "[]"); } catch (e) { return []; }
-}
-let favorites = loadFavoritesLocal();
+let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 
 const grid = document.querySelector("#recipeGrid");
 const recipesPageGrid = document.querySelector("#recipesPageGrid");
 const fridgeResults = document.querySelector("#fridgeResults");
 const modal = document.querySelector("#modal");
 const modalContent = document.querySelector("#modalContent");
-
-const TAG_CLASS = { "Легко": "easy", "Средне": "mid", "Сложно": "hard" };
 
 function recipeCardHTML(r) {
     return `
@@ -3296,7 +3285,7 @@ function recipeCardHTML(r) {
         ${favorites.includes(r.id) ? "♥" : "♡"}
       </button>
       <div class="recipe-body">
-        <div class="meta">◷ ${r.time}<span class="tag ${TAG_CLASS[r.tag] || ""}">${r.tag}</span></div>
+        <div class="meta">◷ ${r.time}<span class="tag">${r.tag}</span></div>
         <h3>${r.name}</h3>
         <p>${r.desc}</p>
         <div class="author">♨ Виртуальный Шеф</div>
@@ -3374,11 +3363,9 @@ document.addEventListener("click", e => {
         favorites = favorites.includes(id)
             ? favorites.filter(x => x !== id)
             : [...favorites, id];
-        localStorage.setItem(favKey(), JSON.stringify(favorites));
-        document.querySelectorAll(`[data-fav="${id}"]`).forEach(b => {
-            b.textContent = favorites.includes(id) ? "♥" : "♡";
-        });
-        scheduleProgressSync();
+        localStorage.setItem("favorites", JSON.stringify(favorites));
+        render();
+        renderTo(fridgeResults, collectFridgeResults());
         setTimeout(() => {
             checkAchievements();
             if (document.querySelector("#page-profile").classList.contains("active")) {
@@ -3409,9 +3396,6 @@ document.querySelector("#searchForm").addEventListener("submit", e => {
                 .toLowerCase().includes(q)
         ) : recipes
     );
-    document.querySelectorAll("#chipsPage .chip").forEach(c =>
-        c.classList.toggle("active", c.dataset.cat === "Все"));
-    switchTab("recipes");
     const user = currentUser();
     if (user) {
         user.stats.searches++;
@@ -3445,7 +3429,6 @@ function saveCurrentUser(user) {
     localStorage.setItem("vc_user_email", user.email);
     localStorage.setItem("vc_stats_" + user.email, JSON.stringify(user.stats));
     localStorage.setItem("vc_achv_" + user.email, JSON.stringify(user.achievements));
-    scheduleProgressSync();
 }
 
 /* ================= ДОСТИЖЕНИЯ ================= */
@@ -3552,7 +3535,7 @@ function getAchievementProgress(id) {
         "promo_5": { current: Math.min(getUsedPromosCount(), 5), target: 5 },
         "title_1": { current: Math.min(getTitlesOwnedCount(), 1), target: 1 },
         "title_max": { current: userTitles && userTitles.owned && userTitles.owned.includes("legend") ? 1 : 0, target: 1 },
-        "full_set": { current: Math.min(getUnlockedCount(), ACHIEVEMENTS.length - 1), target: ACHIEVEMENTS.length - 1 },
+        "full_set": { current: getUnlockedCount(), target: 42 },
     };
 
     return progress[id] || { current: 0, target: 1 };
@@ -3591,9 +3574,9 @@ async function saveAchievementsToCloud(achievements) {
     const user = currentUser();
     if (!user) return;
     try {
-        const { db, doc, setDoc, arrayUnion } = window.firebaseDB;
+        const { db, doc, setDoc } = window.firebaseDB;
         const ref = doc(db, "users", user.email);
-        await setDoc(ref, { achievements: arrayUnion(...achievements) }, { merge: true });
+        await setDoc(ref, { achievements }, { merge: true });
     } catch (e) {
         console.error("Ошибка сохранения достижений:", e);
     }
@@ -3707,7 +3690,7 @@ function checkAchievements() {
         unlockAchievement(user, "title_max");
     }
 
-    if (getUnlockedCount() >= ACHIEVEMENTS.length - 1) unlockAchievement(user, "full_set");
+    if (getUnlockedCount() >= 42) unlockAchievement(user, "full_set");
 }
 
 function showToast(text) {
@@ -3899,7 +3882,6 @@ registerForm?.addEventListener("submit", async e => {
 
     try {
         err.textContent = "Создаём аккаунт...";
-        window._vcRegistering = true;
         const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(
             window.firebaseAuth.auth, email, password
         );
@@ -3928,11 +3910,7 @@ registerForm?.addEventListener("submit", async e => {
         }
         err.textContent = "";
         registerForm.reset();
-        localStorage.setItem("vc_stars", "0");
-        window._progressLoaded = true;
-        window._vcRegistering = false;
         showToast("👋 Добро пожаловать, " + name + "!");
-        await updateStreakOnVisit();
         renderProfile();
     } catch (error) {
         const msgs = {
@@ -3941,8 +3919,6 @@ registerForm?.addEventListener("submit", async e => {
             "auth/weak-password": "Пароль слишком простой (минимум 6 символов)",
         };
         err.textContent = msgs[error.code] || "Ошибка: " + error.message;
-    } finally {
-        window._vcRegistering = false;
     }
 });
 
@@ -4004,7 +3980,6 @@ function updatePasswordBtnState() {
 
 currentPassInput?.addEventListener("input", updatePasswordBtnState);
 newPassInput?.addEventListener("input", updatePasswordBtnState);
-updatePasswordBtnState();
 
 function setPasswordError(msg) {
     if (passwordErrorEl) passwordErrorEl.textContent = msg;
@@ -4168,6 +4143,7 @@ async function deleteMyAccount() {
             return;
         }
 
+        // 1. Проверяем пароль через повторный вход
         try {
             await signInWithEmailAndPassword(auth, authUser.email, password);
         } catch (e) {
@@ -4181,6 +4157,7 @@ async function deleteMyAccount() {
 
         const email = authUser.email;
 
+        // 2. Удаляем ник из коллекции nicks
         try {
             const nickSnap = await getDoc(doc(db, "nicks", user.nick.toLowerCase()));
             if (nickSnap.exists() && nickSnap.data().email === email) {
@@ -4190,6 +4167,7 @@ async function deleteMyAccount() {
             console.warn("Не удалось удалить ник:", e);
         }
 
+        // 3. Удаляем запросы в друзья (входящие и исходящие)
         try {
             const { collection, query, where, getDocs } = window.firebaseDB;
             const q1 = query(collection(db, "friendRequests"), where("to", "==", email));
@@ -4207,6 +4185,7 @@ async function deleteMyAccount() {
             console.warn("Не удалось удалить заявки:", e);
         }
 
+        // 4. Убираем себя из друзей у других пользователей
         try {
             const { collection, getDocs, setDoc, arrayRemove } = window.firebaseDB;
             const allUsersSnap = await getDocs(collection(db, "users"));
@@ -4227,14 +4206,17 @@ async function deleteMyAccount() {
             console.warn("Не удалось убрать из друзей:", e);
         }
 
+        // 5. Удаляем документ пользователя из Firestore
         try {
             await deleteDoc(doc(db, "users", email));
         } catch (e) {
             console.warn("Не удалось удалить users-документ:", e);
         }
 
+        // 6. Удаляем аккаунт из Firebase Auth
         await authUser.delete();
 
+        // 7. Чистим localStorage
         localStorage.removeItem("vc_user_email");
         localStorage.removeItem("vc_user_name");
         localStorage.removeItem("vc_user_nick");
@@ -4243,9 +4225,9 @@ async function deleteMyAccount() {
         localStorage.removeItem("vc_stats_" + email);
         localStorage.removeItem("vc_achv_" + email);
         localStorage.removeItem("vc_exp_" + email);
-        localStorage.removeItem("vc_claimed_days_" + email);
+        localStorage.removeItem("vc_claimed_days");
         localStorage.removeItem("vc_friends_count");
-        localStorage.removeItem("vc_gifted_stars_" + email);
+        localStorage.removeItem("vc_gifted_stars");
         localStorage.removeItem("vc_promos_" + email);
         localStorage.removeItem("vc_wheel_total_" + email);
         localStorage.removeItem("vc_wheel_spins_" + email);
@@ -4254,9 +4236,9 @@ async function deleteMyAccount() {
         localStorage.removeItem("vc_wheel_biggest_" + email);
         localStorage.removeItem("vc_wheel_secret_" + email);
         localStorage.removeItem("vc_streak_" + email);
-        localStorage.removeItem("vc_cooked_recipes_" + email);
-        localStorage.removeItem("vc_cooked_counts_" + email);
-        localStorage.removeItem("favorites_" + email);
+        localStorage.removeItem("vc_cooked_recipes");
+        localStorage.removeItem("vc_cooked_counts");
+        localStorage.removeItem("favorites");
 
         document.querySelector("#deleteAccountModal")?.classList.add("hidden");
 
@@ -4407,12 +4389,12 @@ async function loadStarsFromCloud() {
                 localStorage.setItem("vc_user_nick", data.nick);
             }
         } else {
+            const localStars = localStorage.getItem("vc_stars") || "0";
             await setDoc(ref, {
                 email: user.email, name: user.name,
-                stars: "0", starsIsBigInt: true,
+                stars: String(localStars), starsIsBigInt: true,
                 registered: user.registered, created: Date.now()
-            }, { merge: true });
-            localStorage.setItem("vc_stars", "0");
+            });
         }
         updateStarsBalance();
     } catch (e) {
@@ -4420,7 +4402,7 @@ async function loadStarsFromCloud() {
     }
 }
 
-async function saveStarsToCloud(value, silent = false) {
+async function saveStarsToCloud(value) {
     let safeValue;
     try {
         safeValue = BigInt(value);
@@ -4433,7 +4415,7 @@ async function saveStarsToCloud(value, silent = false) {
 
     const strValue = safeValue.toString();
     localStorage.setItem("vc_stars", strValue);
-    if (!silent) updateStarsBalance();
+    updateStarsBalance();
     if (!window.firebaseDB) return;
     const user = currentUser();
     if (!user) return;
@@ -4464,11 +4446,10 @@ function dateKey(date) {
 }
 
 function getClaimed() {
-    return uGetJSON("vc_claimed_days", {});
+    return JSON.parse(localStorage.getItem("vc_claimed_days") || "{}");
 }
 function saveClaimed(obj) {
-    uSetJSON("vc_claimed_days", obj);
-    scheduleProgressSync();
+    localStorage.setItem("vc_claimed_days", JSON.stringify(obj));
 }
 
 /* ================= БОЛЬШИЕ ЧИСЛА (BigInt) ================= */
@@ -4670,10 +4651,6 @@ function renderRewards() {
 }
 
 function claimDay(key, reward) {
-    if (!currentUser()) {
-        showToast("❌ Войдите, чтобы забрать награду");
-        return;
-    }
     const claimed = getClaimed();
     if (claimed[key]) return;
     const bonus = getTitleBonus();
@@ -4731,8 +4708,6 @@ async function initAuthListener() {
     }
     window.firebaseAuth.onAuthStateChanged(window.firebaseAuth.auth, async (user) => {
         if (user) {
-            if (window._vcRegistering) return;
-
             localStorage.setItem("vc_user_email", user.email);
             let name = user.displayName || localStorage.getItem("vc_user_name");
             if (!name || name === "Пользователь") {
@@ -4740,26 +4715,32 @@ async function initAuthListener() {
             }
             localStorage.setItem("vc_user_name", name);
 
-            try {
-                const { db, doc, getDoc } = window.firebaseDB;
-                const snap = await getDoc(doc(db, "users", user.email));
-                if (snap.exists() && snap.data().nick) {
-                    localStorage.setItem("vc_user_nick", snap.data().nick);
+            if (window.firebaseDB) {
+                try {
+                    const { db, doc, getDoc } = window.firebaseDB;
+                    const ref = doc(db, "users", user.email);
+                    const snap = await getDoc(ref);
+                    if (snap.exists() && snap.data().nick) {
+                        localStorage.setItem("vc_user_nick", snap.data().nick);
+                    }
+                } catch (e) {
+                    console.error("Ошибка загрузки ника:", e);
                 }
-            } catch (e) {
-                console.error("Ошибка загрузки ника:", e);
             }
 
             const isBanned = await checkMyBanStatus();
             if (isBanned) return;
 
-            favorites = loadFavoritesLocal();
             await loadStarsFromCloud();
-            await loadExpFromCloud();
-            await loadProgressFromCloud();
-            await loadFramesFromCloud();
-            await loadAvatarsFromCloud();
-            await loadBannersFromCloud();
+            if (typeof loadFramesFromCloud === "function") {
+                await loadFramesFromCloud();
+            }
+            if (typeof loadAvatarsFromCloud === "function") {
+                await loadAvatarsFromCloud();
+            }
+            if (typeof loadBannersFromCloud === "function") {
+                await loadBannersFromCloud();
+            }
             await loadTitlesFromCloud();
             applyActiveTitle();
             applyActiveBanner();
@@ -4768,7 +4749,6 @@ async function initAuthListener() {
             await loadStreakFromCloud();
             await updateStreakOnVisit();
             updateNavAvatar();
-
             const tempUser = currentUser();
             if (tempUser && isSuperUser(tempUser.email)) {
                 const allIds = ACHIEVEMENTS.map(a => a.id);
@@ -4785,18 +4765,16 @@ async function initAuthListener() {
                 }
             }
             applyActiveTitle();
-            render();
-            initFriendsOnLoad();
         } else {
             localStorage.removeItem("vc_user_email");
-            resetUserState();
             updateNavAvatar();
             updateStreakUI();
-            render();
         }
         renderProfile();
     });
 }
+
+initAuthListener();
 
 /* ================= МАГАЗИН ================= */
 
@@ -5071,8 +5049,6 @@ const SHOP_SECTIONS = {
 document.querySelector("#shopBtn")?.addEventListener("click", () => {
     switchTab("shop");
     updateShopBalance();
-    document.querySelectorAll(".shop-tab").forEach(t =>
-        t.classList.toggle("active", t.dataset.shop === "frames"));
     renderShopSection("frames");
 });
 
@@ -5348,7 +5324,7 @@ function renderAvatarsGrid() {
     }).join("");
 }
 
-async function handleShopClick(e) {
+document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
     const frameBtn = e.target.closest("button[data-frame]");
     if (frameBtn && !frameBtn.disabled) {
         const frameId = frameBtn.dataset.frame;
@@ -5543,13 +5519,6 @@ async function handleShopClick(e) {
         }
         return;
     }
-}
-
-let _shopBusy = false;
-document.querySelector("#shopGrid")?.addEventListener("click", async (e) => {
-    if (_shopBusy) return;
-    _shopBusy = true;
-    try { await handleShopClick(e); } finally { _shopBusy = false; }
 });
 
 document.querySelector("#shopTabs")?.addEventListener("click", (e) => {
@@ -5571,11 +5540,11 @@ let currentCookingRecipe = null;
 let currentCookingStep = 0;
 
 function getCookedRecipes() {
-    return uGetJSON("vc_cooked_recipes", []);
+    return JSON.parse(localStorage.getItem("vc_cooked_recipes") || "[]");
 }
 
 function getRecipeCookCount(recipeId) {
-    const counts = uGetJSON("vc_cooked_counts", {});
+    const counts = JSON.parse(localStorage.getItem("vc_cooked_counts") || "{}");
     return counts[recipeId] || 0;
 }
 
@@ -5584,12 +5553,11 @@ function markRecipeCooked(recipeId) {
     const isFirstTime = !cooked.includes(recipeId);
     if (isFirstTime) {
         cooked.push(recipeId);
-        uSetJSON("vc_cooked_recipes", cooked);
+        localStorage.setItem("vc_cooked_recipes", JSON.stringify(cooked));
     }
-    const counts = uGetJSON("vc_cooked_counts", {});
+    const counts = JSON.parse(localStorage.getItem("vc_cooked_counts") || "{}");
     counts[recipeId] = (counts[recipeId] || 0) + 1;
-    uSetJSON("vc_cooked_counts", counts);
-    scheduleProgressSync();
+    localStorage.setItem("vc_cooked_counts", JSON.stringify(counts));
     return { count: counts[recipeId], isFirstTime: isFirstTime };
 }
 
@@ -5602,7 +5570,6 @@ function openCookingMode(recipeId) {
     currentCookingRecipe = recipe;
     currentCookingStep = 0;
     switchTab("cooking");
-    restoreCookingPage();
     renderCookingStep();
 }
 
@@ -5927,10 +5894,10 @@ async function renderSearchResult(foundUser) {
 
     container.innerHTML = `
         <div class="friend-result-card">
-            <div class="avatar">${escHTML((foundUser.name || "?")[0].toUpperCase())}</div>
+            <div class="avatar">${(foundUser.name || "?")[0].toUpperCase()}</div>
             <div class="info">
-                <b>${escHTML(foundUser.name || "Без имени")}</b>
-                <small>@${escHTML(foundUser.nick || "без_ника")}</small>
+                <b>${foundUser.name || "Без имени"}</b>
+                <small>@${foundUser.nick || "без_ника"}</small>
             </div>
             ${btnHTML}
         </div>
@@ -5940,28 +5907,9 @@ async function renderSearchResult(foundUser) {
 async function sendFriendRequest(toEmail) {
     const me = currentUser();
     if (!me || !window.firebaseDB) return;
-    if (toEmail === me.email) return;
 
     try {
-        const { db, collection, addDoc, query, where, getDocs } = window.firebaseDB;
-
-        const myData = await getUserData(me.email);
-        if ((myData?.friends || []).includes(toEmail)) {
-            showToast("🤝 Вы уже друзья");
-            return;
-        }
-
-        const dup = await getDocs(query(
-            collection(db, "friendRequests"),
-            where("from", "==", me.email),
-            where("to", "==", toEmail),
-            where("status", "==", "pending")
-        ));
-        if (!dup.empty) {
-            showToast("📨 Заявка уже отправлена");
-            return;
-        }
-
+        const { db, collection, addDoc } = window.firebaseDB;
         await addDoc(collection(db, "friendRequests"), {
             from: me.email,
             fromName: me.name,
@@ -5991,13 +5939,13 @@ async function renderRequests() {
 
     container.innerHTML = requests.map(r => `
         <div class="friend-row">
-            <div class="avatar">${escHTML((r.fromName || "?")[0].toUpperCase())}</div>
+            <div class="avatar">${(r.fromName || "?")[0].toUpperCase()}</div>
             <div class="info">
-                <b>${escHTML(r.fromName || "Без имени")}</b>
-                <small>@${escHTML(r.fromNick || "без_ника")}</small>
+                <b>${r.fromName || "Без имени"}</b>
+                <small>@${r.fromNick || "без_ника"}</small>
             </div>
             <div class="actions">
-                <button class="btn-accept" data-accept="${r.id}" data-from="${r.from}" data-fromname="${escHTML(r.fromName || 'Друг')}">✅ Принять</button>
+                <button class="btn-accept" data-accept="${r.id}" data-from="${r.from}" data-fromname="${r.fromName || 'Друг'}">✅ Принять</button>
                 <button class="btn-reject" data-reject="${r.id}">❌ Отклонить</button>
             </div>
         </div>
@@ -6081,7 +6029,7 @@ async function renderFriends() {
     container.innerHTML = friendsData.map((f, i) => {
         if (!f) return "";
         const friendEmail = friends[i];
-        const letter = escHTML((f.name || "?")[0].toUpperCase());
+        const letter = (f.name || "?")[0].toUpperCase();
 
         let avatarHTML = "";
         if (avatarSrcOf(f)) {
@@ -6097,8 +6045,8 @@ async function renderFriends() {
             <div class="friend-row">
                 <div class="${avatarCls}">${avatarHTML}</div>
                 <div class="info">
-                    <b>${escHTML(f.name || "Без имени")}</b>
-                    <small>@${escHTML(f.nick || "без_ника")} · ⭐ ${formatBigNumber(f.stars || 0)} · 🏆 ${f.achievements?.length || 0}</small>
+                    <b>${f.name || "Без имени"}</b>
+                    <small>@${f.nick || "без_ника"} · ⭐ ${formatBigNumber(f.stars || 0)} · 🏆 ${f.achievements?.length || 0}</small>
                 </div>
                 <div class="actions">
                     <button class="btn-profile" data-view-friend="${friendEmail}">👤 Профиль</button>
@@ -6116,7 +6064,7 @@ async function showFriendProfile(email) {
         showToast("❌ Пользователь не найден");
         return;
     }
-    await openFriendPage({ email, ...friend });
+    await openFriendPage(friend);
 }
 
 async function removeFriend(email) {
@@ -6144,15 +6092,9 @@ async function removeFriend(email) {
     }
 }
 
-let _giftBusy = false;
-
 async function giveStarsToFriend(email, amount) {
     const me = currentUser();
     if (!me || !window.firebaseDB) return;
-    if (email === me.email) {
-        showToast("❌ Нельзя подарить самому себе");
-        return;
-    }
 
     let amountBig;
     try {
@@ -6161,28 +6103,24 @@ async function giveStarsToFriend(email, amount) {
         showToast("❌ Введи корректное число");
         return;
     }
+
     if (amountBig < 1n) {
         showToast("❌ Введи число больше 0");
         return;
     }
+
     if (getStars() < amountBig) {
         showToast("❌ Недостаточно звёзд");
         return;
     }
 
-    if (_giftBusy) return;
-    _giftBusy = true;
-
     try {
         const { db, doc, getDoc, setDoc } = window.firebaseDB;
 
+        await saveStarsToCloud(getStars() - amountBig);
+
         const hisRef = doc(db, "users", email);
         const hisSnap = await getDoc(hisRef);
-        if (!hisSnap.exists()) {
-            showToast("❌ Пользователь не найден");
-            return;
-        }
-
         let hisStars = 0n;
         try {
             const raw = hisSnap.data()?.stars;
@@ -6190,29 +6128,27 @@ async function giveStarsToFriend(email, amount) {
         } catch (e) {
             hisStars = 0n;
         }
-
-        await saveStarsToCloud(getStars() - amountBig);
+        const newHisStars = hisStars + amountBig;
         await setDoc(hisRef, {
-            stars: (hisStars + amountBig).toString(),
+            stars: newHisStars.toString(),
             starsIsBigInt: true
         }, { merge: true });
 
-        addGiftedStars(Number(amountBig > 1000000000n ? 1000000000n : amountBig));
+        addGiftedStars(Number(amountBig));
         checkAchievements();
 
         showToast(`🎁 Подарено ${formatBigNumber(amountBig)} ⭐!`);
+        modal.classList.add("hidden");
     } catch (e) {
         console.error("Ошибка подарка:", e);
         showToast("❌ Ошибка");
-    } finally {
-        _giftBusy = false;
     }
 }
 
 function initFriendsPage() {
     document.querySelector("#friendsSearchForm")?.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const nick = document.querySelector("#friendsSearchInput").value.trim().replace(/^@/, "");
+        const nick = document.querySelector("#friendsSearchInput").value.trim();
         if (!nick) return;
         const found = await searchUserByNick(nick);
         renderSearchResult(found);
@@ -6265,7 +6201,7 @@ function getFriendsCount() {
 }
 
 function getGiftedStars() {
-    return Number(uGetJSON("vc_gifted_stars", 0)) || 0;
+    return parseInt(localStorage.getItem("vc_gifted_stars") || "0");
 }
 
 function getWheelTotalSpins() {
@@ -6444,14 +6380,15 @@ function canView(targetUser, type) {
 
     if (setting === "all") return true;
     if (setting === "friends") {
-        return (targetUser.friends || []).includes(me.email);
+        const myFriends = JSON.parse(localStorage.getItem("vc_friends_list") || "[]");
+        return myFriends.includes(targetUser.email);
     }
     return true;
 }
 
 function addGiftedStars(amount) {
-    uSetJSON("vc_gifted_stars", getGiftedStars() + amount);
-    scheduleProgressSync();
+    const current = getGiftedStars();
+    localStorage.setItem("vc_gifted_stars", String(current + amount));
 }
 
 const _origRenderProfileForFriends = renderProfile;
@@ -6547,7 +6484,7 @@ async function openFriendPage(friend) {
         if (avatarSrcOf(friend)) {
             avatarEl.innerHTML = `<img src="${avatarSrcOf(friend)}" alt="avatar">`;
         } else {
-            avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${escHTML(friendLetter)}</span>`;
+            avatarEl.innerHTML = `<span style="position:relative;z-index:5;color:#fff;font-size:44px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.5);">${friendLetter}</span>`;
         }
     }
 
@@ -6560,7 +6497,7 @@ async function openFriendPage(friend) {
     setText("#friendFriendsCount", friendFriends.length);
     setText("#friendFriendsCountTab", `(${friendFriends.length})`);
 
-    const friendExp = isPremiumLevelUser(friend.email) ? getExpForLevel(MAX_LEVEL) : (friend.exp || 0);
+    const friendExp = friend.exp || 0;
     const friendProg = getLevelProgress(friendExp);
     const friendPremium = isPremiumLevelUser(friend.email);
 
@@ -6609,20 +6546,15 @@ async function openFriendPage(friend) {
     try {
         const canSee = canView(friend, "friends");
         const listEl = document.querySelector("#friendFriendsList");
-        if (listEl) {
-            if (!canSee) {
-                listEl.innerHTML = `<div class="friends-empty">🔒 Скрыто настройками приватности</div>`;
-            } else if (!friendFriends.length) {
-                listEl.innerHTML = `<div class="friends-empty">Пока нет друзей</div>`;
-            } else {
-                listEl.innerHTML = `<div class="friends-empty">Загрузка...</div>`;
-                const data = await Promise.all(friendFriends.map(e => getUserData(e)));
-                const rows = data
-                    .map((f, i) => f ? { email: friendFriends[i], ...f } : null)
-                    .filter(Boolean);
-                listEl.innerHTML = rows.length
-                    ? rows.map(buildFriendOfFriendRow).join("")
-                    : `<div class="friends-empty">Пока нет друзей</div>`;
+        if (listEl && !canSee) {
+            listEl.innerHTML = `<span class="friend-chip">🔒 Скрыто настройками приватности</span>`;
+        } else {
+            const friendsOfFriend = await Promise.all(friendFriends.map(e => getUserData(e)));
+            if (listEl) {
+                const valid = friendsOfFriend.filter(f => f);
+                listEl.innerHTML = valid.length === 0
+                    ? `<span class="friend-chip">Нет друзей</span>`
+                    : valid.map(f => `<span class="friend-chip">${(f.name || "?")[0].toUpperCase()} ${f.name || ""}</span>`).join("");
             }
         }
     } catch (e) {
@@ -6659,29 +6591,7 @@ async function openFriendPage(friend) {
         };
     });
 
-    window._friendBackTab = document.querySelector(".chef-sidebar-btn[data-chef-tab].active")?.dataset.chefTab || "friends";
     switchTab("friend");
-}
-
-function buildFriendOfFriendRow(f) {
-    const letter = escHTML((f.name || "?")[0].toUpperCase());
-    const src = avatarSrcOf(f);
-    const avatarHTML = src ? `<img src="${src}" alt="">` : letter;
-
-    let avatarCls = "avatar";
-    if (f.activeFrame) avatarCls += " frame-" + f.activeFrame;
-
-    const me = currentUser();
-    const isMe = me && me.email === f.email;
-
-    return `
-        <div class="friend-row friend-row-click" data-open-profile="${f.email}">
-            <div class="${avatarCls}">${avatarHTML}</div>
-            <div class="info">
-                <b>${isMe ? "👤 " : ""}${escHTML(f.name || "Без имени")}</b>
-                <small>@${escHTML(f.nick || "без_ника")} · ⭐ ${formatBigNumber(f.stars || 0)} · 🏆 ${f.achievements?.length || 0}</small>
-            </div>
-        </div>`;
 }
 
 function renderFriendLevelsRoad(currentLevel, isPremium) {
@@ -6722,12 +6632,23 @@ function renderFriendLevelsRoad(currentLevel, isPremium) {
     road.innerHTML = html;
 }
 
-document.querySelector("#friendBackBtn")?.addEventListener("click", () => {
-    const tab = window._friendBackTab || "friends";
+document.querySelector("#friendBackBtn")?.addEventListener("click", async () => {
     switchTab("profile");
-    document.querySelector(`[data-chef-tab="${tab}"]`)?.click();
-});
 
+    setTimeout(async () => {
+        document.querySelectorAll(".chef-sidebar-btn").forEach(b => b.classList.remove("active"));
+        const friendsTab = document.querySelector('[data-chef-tab="friends"]');
+        if (friendsTab) friendsTab.classList.add("active");
+
+        document.querySelectorAll(".chef-tab-content").forEach(c => c.classList.remove("active"));
+        const friendsContent = document.querySelector('[data-chef-content="friends"]');
+        if (friendsContent) friendsContent.classList.add("active");
+
+        await renderRequests();
+        await renderFriends();
+        await updateFriendsBadge();
+    }, 50);
+});
 const LEVEL_TITLES = {
     10: "Новичок",
     25: "Ученик",
@@ -6844,7 +6765,7 @@ let _lastNotifiedLevel = 0;
 
 async function addExp(amount, reason) {
     const email = localStorage.getItem("vc_user_email");
-    if (!email || isPremiumLevelUser(email)) return;
+    if (!email) return;
 
     const oldExp = getExp();
     const oldLevel = getLevelFromExp(oldExp);
@@ -6852,15 +6773,7 @@ async function addExp(amount, reason) {
     const newExp = oldExp + amount;
     const newLevel = getLevelFromExp(newExp);
 
-    localStorage.setItem("vc_exp_" + email, String(newExp));
-    if (window.firebaseDB) {
-        try {
-            const { db, doc, setDoc, increment } = window.firebaseDB;
-            await setDoc(doc(db, "users", email), { exp: increment(amount) }, { merge: true });
-        } catch (e) {
-            console.error("Ошибка сохранения exp:", e);
-        }
-    }
+    await saveExpToCloud(newExp);
     updateLevelDisplay();
 
     if (newLevel > oldLevel) {
@@ -6886,6 +6799,8 @@ function updateLevelDisplay() {
     const prog = getLevelProgress(exp);
 
     const isPremium = isPremiumLevelUser(email);
+
+    console.log(`[Уровень] ${prog.level}${isPremium ? " (PREMIUM)" : ""} — ${prog.currentInLevel}/${prog.needed} exp (${prog.percent}%)`);
 
     const levelNumEl = document.querySelector("#profileLevelNum");
     const levelBarEl = document.querySelector("#profileLevelBar");
@@ -6991,6 +6906,18 @@ function renderLevelsRoad() {
 
     road.innerHTML = html;
 }
+
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-chef-tab]");
+    if (!btn) return;
+    if (btn.dataset.chefTab === "promo") {
+        setTimeout(renderPromoHistory, 100);
+    }
+    if (btn.dataset.chefTab === "admin") {
+        setTimeout(renderAdminPromoList, 100);
+        setTimeout(renderAdminBanList, 100);
+    }
+});
 
 const VIEW_MODE_KEY = "vc_view_mode";
 
@@ -7101,8 +7028,6 @@ async function loadUsedPromosFromCloud() {
     }
 }
 
-let _promoBusy = false;
-
 async function activatePromo(codeRaw) {
     const errEl = document.querySelector("#promoError");
     const input = document.querySelector("#promoInput");
@@ -7113,8 +7038,6 @@ async function activatePromo(codeRaw) {
         errEl.textContent = msg;
         errEl.className = "promo-error " + (ok ? "ok" : "fail");
     };
-
-    if (_promoBusy) return;
 
     if (!codeRaw || !codeRaw.trim()) {
         setError("❌ Введи промокод");
@@ -7127,45 +7050,29 @@ async function activatePromo(codeRaw) {
         return;
     }
 
-    _promoBusy = true;
+    const code = codeRaw.trim().toUpperCase();
+
+    const promo = await findPromoInCloud(code);
+    if (!promo) {
+        setError("❌ Такого промокода не существует");
+        return;
+    }
+
     btn.disabled = true;
     btn.textContent = "⏳...";
 
     try {
-        const code = codeRaw.trim().toUpperCase();
-
-        const promo = await findPromoInCloud(code);
-        if (!promo) {
-            setError("❌ Такого промокода не существует");
-            return;
-        }
-
-        const used = await loadUsedPromosFromCloud();
-        if (used.some(u => u.code === code) || (promo.activatedBy || []).includes(user.email)) {
-            setError("❌ Ты уже активировал этот промокод");
-            return;
-        }
-
         const { db, doc, setDoc, arrayUnion, updateDoc } = window.firebaseDB;
 
-        // 1. сначала помечаем код использованным
-        await setDoc(doc(db, "users", user.email), {
-            usedPromocodes: arrayUnion({
-                code,
-                stars: promo.stars || "0",
-                exp: promo.exp || 0,
-                spins: promo.spins || 0,
-                date: Date.now()
-            })
-        }, { merge: true });
-
-        // 2. потом выдаём награду
         if (promo.stars && BigInt(promo.stars) > 0n) {
-            await saveStarsToCloud(getStars() + BigInt(promo.stars));
+            const newBalance = getStars() + BigInt(promo.stars);
+            await saveStarsToCloud(newBalance);
         }
+
         if (promo.exp > 0) {
             await addExp(promo.exp, "за промокод");
         }
+
         if (promo.spins > 0) {
             await addSpinTickets(promo.spins);
             if (typeof updateWheelFreeSpinsUI === "function") {
@@ -7173,13 +7080,19 @@ async function activatePromo(codeRaw) {
             }
         }
 
-        try {
-            await updateDoc(doc(db, "promocodes", code), {
-                activatedBy: arrayUnion(user.email)
-            });
-        } catch (e) {
-            console.warn("Не удалось обновить activatedBy:", e);
-        }
+        await setDoc(doc(db, "users", user.email), {
+            usedPromocodes: arrayUnion({
+                code,
+                stars: promo.stars || 0,
+                exp: promo.exp || 0,
+                spins: promo.spins || 0,
+                date: Date.now()
+            })
+        }, { merge: true });
+
+        await updateDoc(doc(db, "promocodes", code), {
+            activatedBy: arrayUnion(user.email)
+        });
 
         addUsedPromo(code);
         const rewardText = formatPromoRewards(promo).join(" · ");
@@ -7195,7 +7108,6 @@ async function activatePromo(codeRaw) {
         console.error(e);
         setError("❌ Ошибка активации, попробуй позже");
     } finally {
-        _promoBusy = false;
         btn.disabled = false;
         btn.textContent = "🎁 Активировать";
     }
@@ -7580,7 +7492,7 @@ async function renderAdminBanList() {
 
         return `
             <div class="admin-ban-item">
-                <span class="ban-user">🚫 ${escHTML(u.name || u.email)} (@${escHTML(u.nick || "без_ника")})</span>
+                <span class="ban-user">🚫 ${u.name || u.email} (@${u.nick || "без_ника"})</span>
                 <span class="ban-until">${untilText}</span>
                 <button class="unban-btn" data-unban="${u.email}">✅ Разбанить</button>
             </div>
@@ -7696,8 +7608,8 @@ async function adminCreatePromo() {
         return;
     }
 
-    if (!/^[A-Z0-9А-ЯЁ_-]{3,30}$/.test(code)) {
-        showToast("❌ Код: 3–30 символов, буквы/цифры/_/-");
+    if (!rewardRaw) {
+        showToast("❌ Введи награду");
         return;
     }
 
@@ -7841,7 +7753,6 @@ document.addEventListener("click", (e) => {
     }
     if (tabName === "admin") {
         setTimeout(renderAdminPromoList, 100);
-        setTimeout(renderAdminBanList, 100);
     }
 });
 
@@ -7861,7 +7772,6 @@ const WHEEL_PRIZES = [
 ];
 
 const WHEEL_SPIN_COST = 1000;
-const WHEEL_TOTAL_CHANCE = WHEEL_PRIZES.reduce((s, p) => s + p.chance, 0);
 
 let wheelRotation = 0;
 let wheelSpinning = false;
@@ -7984,7 +7894,7 @@ async function renderWheel() {
                 <div class="wheel-chance-row">
                     <span class="wcr-emoji">${isSecret ? "🎁" : isEmpty ? "🚫" : "⭐"}</span>
                     <span class="wcr-label">${starsText}</span>
-                    <span class="wcr-percent">${(p.chance / WHEEL_TOTAL_CHANCE * 100).toFixed(1)}%</span>
+                    <span class="wcr-percent">${p.chance}%</span>
                 </div>
             `;
         }).join("");
@@ -8053,70 +7963,81 @@ async function spinWheel() {
         return;
     }
 
-    wheelSpinning = true;
+    const freeSpins = await getSpinTickets();
+    const useFreeSpin = freeSpins > 0;
 
-    let prize, guarantee, titleBonus;
-
-    try {
-        const freeSpins = await getSpinTickets();
-        const useFreeSpin = freeSpins > 0;
-
-        if (!useFreeSpin && getStars() < BigInt(WHEEL_SPIN_COST)) {
+    if (!useFreeSpin) {
+        const stars = getStars();
+        if (stars < BigInt(WHEEL_SPIN_COST)) {
             showToast(`❌ Нужно ${WHEEL_SPIN_COST} ⭐`);
-            wheelSpinning = false;
             return;
         }
+    }
 
-        const data = getWheelData();
-        if (!data.spinsSinceLast) data.spinsSinceLast = {};
+    wheelSpinning = true;
 
-        const picked = pickWheelPrize();
-        prize = picked.prize;
-        guarantee = picked.guarantee;
-        titleBonus = prize.stars > 0 ? getTitleBonus() : 0;
+    const data = getWheelData();
+    if (!data.spinsSinceLast) data.spinsSinceLast = {};
 
-        const prizeIndex = getPrizeIndex(prize);
-        const sectorAngle = 360 / WHEEL_PRIZES.length;
-        const targetAngle = 360 - (prizeIndex * sectorAngle + sectorAngle / 2);
-        const currentMod = ((wheelRotation % 360) + 360) % 360;
-        let delta = targetAngle - currentMod;
-        if (delta < 0) delta += 360;
-        wheelRotation += 5 * 360 + delta;
+    const { prize, guarantee } = pickWheelPrize();
+    const prizeIndex = getPrizeIndex(prize);
 
-        const wheelEl = document.querySelector("#wheel");
-        if (wheelEl) wheelEl.style.transform = `rotate(${wheelRotation}deg)`;
+    const sectorAngle = 360 / WHEEL_PRIZES.length;
+    const targetAngle = 360 - (prizeIndex * sectorAngle + sectorAngle / 2);
+    const fullTurns = 5 * 360;
+    const currentMod = ((wheelRotation % 360) + 360) % 360;
+    let delta = targetAngle - currentMod;
+    if (delta < 0) delta += 360;
+    const finalRotation = wheelRotation + fullTurns + delta;
 
-        if (useFreeSpin) {
-            await addSpinTickets(-1);
-            showToast(`🎰 Бесплатная крутка! Осталось: ${freeSpins - 1}`);
-        } else {
-            await saveStarsToCloud(getStars() - BigInt(WHEEL_SPIN_COST));
-        }
+    const wheelEl = document.querySelector("#wheel");
+    if (wheelEl) {
+        wheelEl.style.transform = `rotate(${finalRotation}deg)`;
+    }
+    wheelRotation = finalRotation;
 
-        await saveStarsToCloud(getStars() + BigInt(prize.stars + titleBonus), true);
+    if (wheelRotation > 360 * 1000) {
+        wheelRotation = wheelRotation % 360;
+    }
 
-        data.totalSpins++;
-        WHEEL_PRIZES.forEach(p => {
-            data.spinsSinceLast[p.id] = (p.id === prize.id) ? 0 : (data.spinsSinceLast[p.id] || 0) + 1;
-        });
-        saveWheelData(data);
-        await saveWheelDataToCloud(data);
-
-        if (prize.stars === 0) addWheelNothingCount();
-        else setWheelBiggestWin(prize.stars);
-        if (prize.id === "p9") addWheelSecretCount();
-    } catch (e) {
-        console.error("Ошибка вращения:", e);
-        wheelSpinning = false;
-        return;
+    if (useFreeSpin) {
+        await addSpinTickets(-1);
+        showToast(`🎰 Бесплатная крутка! Осталось: ${freeSpins - 1}`);
+    } else {
+        await saveStarsToCloud(getStars() - BigInt(WHEEL_SPIN_COST));
     }
 
     setTimeout(async () => {
+        const titleBonus = prize.stars > 0 ? getTitleBonus() : 0;
+        const newBalance = getStars() + BigInt(prize.stars + titleBonus);
+        await saveStarsToCloud(newBalance);
+
+        data.totalSpins++;
+        data.spinsSinceLast = data.spinsSinceLast || {};
+
+        WHEEL_PRIZES.forEach(p => {
+            if (p.id === prize.id) {
+                data.spinsSinceLast[p.id] = 0;
+            } else {
+                data.spinsSinceLast[p.id] = (data.spinsSinceLast[p.id] || 0) + 1;
+            }
+        });
+
+        saveWheelData(data);
+        await saveWheelDataToCloud(data);
+
         if (prize.stars === 0) {
+            addWheelNothingCount();
             showToast(`😢 Выпало: ${prize.emoji} Ничего. Не повезло!`);
         } else {
+            setWheelBiggestWin(prize.stars);
             showToast(`🎉 Выпало: ${prize.emoji} ${prize.label}${titleBonus ? ` +${titleBonus} ⭐ за титул` : ""}!${guarantee ? " (гарант)" : ""}`);
         }
+
+        if (prize.id === "p9") {
+            addWheelSecretCount();
+        }
+
         wheelSpinning = false;
         await renderWheel();
         updateStarsBalance();
@@ -8189,7 +8110,7 @@ function formatStarsFull(v) {
 
 function getLeaderStats(user) {
     const me = currentUser();
-    const exp = isPremiumLevelUser(user.email) ? getExpForLevel(MAX_LEVEL) : (user.exp || 0);
+    const exp = user.exp || 0;
     const stars = (me && user.email === me.email)
         ? getStars()
         : parseStarsSafe(user.stars);
@@ -8206,7 +8127,7 @@ function buildAvatarWithFrame(user) {
     if (hasAvatar) {
         inner = `<img src="${hasAvatar}" alt="">`;
     } else {
-        inner = `<span style="color:#fff;font-size:18px;font-weight:800;">${escHTML(letter)}</span>`;
+        inner = `<span style="color:#fff;font-size:18px;font-weight:800;">${letter}</span>`;
     }
 
     let cls = "leader-avatar";
@@ -8272,7 +8193,7 @@ async function loadLeadersData() {
 
 function renderLeaderRow(user, place, isMe) {
     const stats = getLeaderStats(user);
-    const displayName = escHTML(user.name || "Без имени");
+    const displayName = user.name || "Без имени";
 
     let rowClass = "leader-row";
     if (place === 1) rowClass += " top-1";
@@ -8285,7 +8206,7 @@ function renderLeaderRow(user, place, isMe) {
             ${buildAvatarWithFrame(user)}
             <div class="leader-info">
                 <b>${isMe ? "👤 " : ""}${displayName}</b>
-                <small>@${escHTML(user.nick || "без_ника")} · Ур. ${stats.level}</small>
+                <small>@${user.nick || "без_ника"} · Ур. ${stats.level}</small>
             </div>
             <div class="leader-stats">
                 <div class="leader-stat">
@@ -8429,10 +8350,6 @@ async function saveMyRecipes() {
     try {
         const { db, doc, setDoc } = window.firebaseDB;
         const clean = myRecipes.map(({ own, ...rest }) => rest);
-        if (JSON.stringify(clean).length > 900000) {
-            showToast("❌ Слишком много фото. Удали старые рецепты или картинки");
-            return false;
-        }
         await setDoc(doc(db, "users", user.email), { myRecipes: clean }, { merge: true });
         return true;
     } catch (e) {
@@ -8453,7 +8370,7 @@ function renderMyRecipes() {
           <img src="${r.img || MY_RECIPE_PLACEHOLDER}" alt="${r.name}">
           <button class="heart my-recipe-del" data-del-my-recipe="${r.id}" title="Удалить">🗑</button>
           <div class="recipe-body">
-            <div class="meta">◷ ${r.time}<span class="tag ${TAG_CLASS[r.tag] || ""}">${r.tag}</span></div>
+            <div class="meta">◷ ${r.time}<span class="tag">${r.tag}</span></div>
             <h3>${r.name}</h3>
             <p>${r.desc}</p>
             <div class="author">Мой рецепт</div>
@@ -8889,7 +8806,7 @@ document.addEventListener("change", async e => {
 
 window.addEventListener("load", () => setTimeout(updateAvatarDelBtn, 1500));
 
-/* ================= 🔥 ОГОНЕК ================= */
+/* ================= 🔥 СЕРИЯ ЗАХОДОВ ================= */
 
 function streakKey() {
     const email = localStorage.getItem("vc_user_email");
@@ -8920,6 +8837,7 @@ function yesterdayKey() {
     return dateKey(d);
 }
 
+// Серия, которую показываем: если вчера/сегодня не заходил — 0
 function getDisplayStreak() {
     const d = getStreakData();
     if (d.last === dateKey(new Date()) || d.last === yesterdayKey()) return d.current;
@@ -8982,6 +8900,7 @@ async function loadStreakFromCloud() {
             current: c.streakCurrent || 0,
             best: c.streakBest || 0
         };
+        // берём более свежую запись, рекорд — максимум из двух
         const base = cloud.last > local.last ? cloud : local;
         const merged = {
             last: base.last,
@@ -9014,108 +8933,3 @@ async function updateStreakOnVisit() {
 }
 
 window.addEventListener("load", () => setTimeout(updateStreakUI, 300));
-
-document.querySelector("#friendFriendsList")?.addEventListener("click", async (e) => {
-    const row = e.target.closest("[data-open-profile]");
-    if (!row) return;
-
-    const email = row.dataset.openProfile;
-    const me = currentUser();
-    if (!me) return;
-
-    if (email === me.email) {
-        switchTab("profile");
-        renderProfile();
-        return;
-    }
-
-    const data = await getUserData(email);
-    if (data) await openFriendPage({ email, ...data });
-    else showToast("❌ Пользователь не найден");
-});
-
-/* ================= ПЕРСОНАЛЬНЫЕ ДАННЫЕ, СИНХРОНИЗАЦИЯ ================= */
-
-function uKey(name) {
-    const e = localStorage.getItem("vc_user_email");
-    return e ? `${name}_${e}` : name;
-}
-
-function uGetJSON(name, def) {
-    const e = localStorage.getItem("vc_user_email");
-    let raw = e ? localStorage.getItem(`${name}_${e}`) : null;
-    if (raw === null) raw = localStorage.getItem(name);
-    if (raw === null) return def;
-    try { return JSON.parse(raw); } catch (err) { return def; }
-}
-
-function uSetJSON(name, value) {
-    localStorage.setItem(uKey(name), JSON.stringify(value));
-}
-
-function scheduleProgressSync() {
-    clearTimeout(window._syncTimer);
-    window._syncTimer = setTimeout(saveProgressToCloud, 1500);
-}
-
-async function saveProgressToCloud() {
-    if (!window._progressLoaded) return;
-    const user = currentUser();
-    if (!user || !window.firebaseDB) return;
-    try {
-        const { db, doc, setDoc } = window.firebaseDB;
-        await setDoc(doc(db, "users", user.email), {
-            stats: user.stats,
-            favorites: favorites,
-            cookedRecipes: getCookedRecipes(),
-            claimedDays: getClaimed(),
-            giftedStars: getGiftedStars()
-        }, { merge: true });
-    } catch (e) {
-        console.error("Ошибка синхронизации прогресса:", e);
-    }
-}
-
-async function loadProgressFromCloud() {
-    const user = currentUser();
-    if (!user || !window.firebaseDB) return;
-    try {
-        const d = await getUserData(user.email);
-        if (d) {
-            const cs = d.stats || {};
-            ["opened", "fridgeSearches", "searches", "recipesPageVisits"].forEach(k => {
-                user.stats[k] = Math.max(Number(user.stats[k]) || 0, Number(cs[k]) || 0);
-            });
-            saveCurrentUser(user);
-
-            if (Array.isArray(d.favorites)) {
-                favorites = d.favorites;
-                localStorage.setItem(favKey(), JSON.stringify(favorites));
-            }
-            uSetJSON("vc_cooked_recipes", [...new Set([...getCookedRecipes(), ...(d.cookedRecipes || [])])]);
-            uSetJSON("vc_claimed_days", { ...getClaimed(), ...(d.claimedDays || {}) });
-            uSetJSON("vc_gifted_stars", Math.max(getGiftedStars(), Number(d.giftedStars) || 0));
-        }
-    } catch (e) {
-        console.error("Ошибка загрузки прогресса:", e);
-    }
-    window._progressLoaded = true;
-}
-
-function resetUserState() {
-    ["vc_stars", "vc_user_name", "vc_user_nick", "vc_user_registered"]
-        .forEach(k => localStorage.removeItem(k));
-
-    userFrames = { owned: [], active: null };
-    userAvatars = { owned: [], active: null, custom: "" };
-    userTitles = { owned: [], active: null };
-    userBanners = { owned: ["default"], active: "default" };
-    userPrivacy = { recipes: "all", friends: "all", hidden: false };
-    favorites = loadFavoritesLocal();
-    window._progressLoaded = false;
-
-    updateStarsBalance();
-    applyActiveBanner();
-    applyActiveTitle();
-    updateAvatarDelBtn();
-}
