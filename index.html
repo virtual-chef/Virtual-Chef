@@ -281,8 +281,8 @@
                         maxlength="20">
                     <input type="text" id="regName" placeholder="Ваше имя" required minlength="2">
                     <input type="email" id="regEmail" placeholder="Email" required>
-                    <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)" required
-                        minlength="6">
+                    <input type="password" id="regPassword" placeholder="Пароль (мин. 4 символа)" required
+                        minlength="4">
                     <button type="submit">Создать аккаунт</button>
                     <p class="auth-error" id="regError"></p>
                 </form>
@@ -368,7 +368,7 @@
                             <span>❤️</span> Избранное
                         </button>
                         <button class="chef-sidebar-btn" data-chef-tab="friends">
-                            <span>👥</span> Друзья <span class="nav-badge hidden" id="friendsBadge"></span>
+                            <span>👥</span> Друзья
                         </button>
                         <button class="chef-sidebar-btn" data-chef-tab="leaders">
                             <span>🏆</span> Таблица лидеров
@@ -706,7 +706,8 @@
 
                                 <div class="password-group">
                                     <h3>Пароль</h3>
-                                    <p class="muted">Для смены нужен текущий пароль. Новый — не короче 10 символов.</p>
+                                    <p class="muted">После смены остальные устройства выйдут из аккаунта, на почту
+                                        придёт уведомление</p>
 
                                     <form id="changePasswordForm" class="password-form">
                                         <div class="password-row">
@@ -757,14 +758,10 @@
 
                                 <div id="promoHistory" class="promo-history"></div>
                             </div>
-
                         </div>
-
                     </div>
 
                 </div>
-
-            </div>
 
         </section>
 
@@ -864,12 +861,47 @@
 
     </main>
 
+
+    <!-- ================= ДРУЗЬЯ ================= -->
+    <main id="page-friends" class="page">
+
+        <section class="page-hero friends-hero">
+            <div class="container">
+                <h1>👥 Друзья</h1>
+                <p>Находите друзей по нику, отправляйте заявки и дарите звёзды</p>
+            </div>
+        </section>
+
+        <section class="container page-body">
+
+            <div class="friends-search">
+                <h2>🔍 Найти друга</h2>
+                <p class="friends-desc">Введи ник друга, чтобы отправить заявку</p>
+                <form id="friendsSearchForm">
+                    <input type="text" id="friendsSearchInput" placeholder="Ник друга (без @)">
+                    <button type="submit">🔍 Найти</button>
+                </form>
+                <div id="friendsSearchResult"></div>
+            </div>
+
+            <div class="friends-section" id="requestsSection">
+                <h2>📨 Заявки в друзья <span id="requestsCount">(0)</span></h2>
+                <div id="requestsList"></div>
+            </div>
+
+            <div class="friends-section">
+                <h2>🤝 Мои друзья <span id="friendsCount">(0)</span></h2>
+                <div id="friendsList"></div>
+            </div>
+
+        </section>
+
+    </main>
+
     <!-- ================= ПРОФИЛЬ ДРУГА ================= -->
     <main id="page-friend" class="page">
 
         <section class="container page-body">
-
-            <button class="friend-back-btn" id="friendBackBtn">← Назад</button>
 
             <div class="chef-profile">
 
@@ -1194,7 +1226,7 @@
 
         import {
             getFirestore, doc, getDoc, setDoc, updateDoc,
-            collection, query, where, getDocs, deleteDoc, addDoc, arrayUnion, arrayRemove, increment
+            collection, query, where, getDocs, deleteDoc, addDoc, arrayUnion, arrayRemove
         } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -1223,8 +1255,7 @@
             deleteDoc: deleteDoc,
             addDoc: addDoc,
             arrayUnion: arrayUnion,
-            arrayRemove: arrayRemove,
-            increment: increment
+            arrayRemove: arrayRemove
         };
 
         window.firebaseAuth = {
